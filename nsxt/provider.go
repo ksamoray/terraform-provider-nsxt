@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	api "github.com/vmware/go-vmware-nsxt"
@@ -69,7 +70,7 @@ type nsxtClients struct {
 }
 
 // Provider for VMWare NSX-T
-func Provider() *schema.Provider {
+func NewProvider() *schema.Provider {
 	return &schema.Provider{
 
 		Schema: map[string]*schema.Schema{
@@ -414,7 +415,7 @@ func Provider() *schema.Provider {
 			"nsxt_policy_ipsec_vpn_service":                resourceNsxtPolicyIPSecVpnService(),
 			"nsxt_policy_l2_vpn_service":                   resourceNsxtPolicyL2VpnService(),
 			"nsxt_policy_ipsec_vpn_local_endpoint":         resourceNsxtPolicyIPSecVpnLocalEndpoint(),
-			"nsxt_policy_ip_discovery_profile":             resourceNsxtPolicyIPDiscoveryProfile(),
+			//"nsxt_policy_ip_discovery_profile":             resourceNsxtPolicyIPDiscoveryProfile(),
 			"nsxt_policy_context_profile_custom_attribute": resourceNsxtPolicyContextProfileCustomAttribute(),
 			"nsxt_policy_segment_security_profile":         resourceNsxtPolicySegmentSecurityProfile(),
 			"nsxt_policy_spoof_guard_profile":              resourceNsxtPolicySpoofGuardProfile(),
@@ -815,7 +816,7 @@ func (processor logRequestProcessor) Process(req *http.Request) error {
 	replaced := authHeaderRegexp.ReplaceAllString(string(reqDump), "<Omitted Authorization header>")
 	replaced = cspHeaderRegexp.ReplaceAllString(replaced, "<Omitted Csp-Auth-Token header>")
 
-	log.Printf("Issuing request towards NSX:\n%s", replaced)
+	tflog.Info(req.Context(), fmt.Sprintf("Issuing request towards NSX:\n%s", replaced))
 	return nil
 }
 
@@ -974,6 +975,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return clients, nil
 }
 
+func GetPolicyConnector(clients interface{}) client.Connector {
+	return getPolicyConnector(clients)
+}
+
 // Standard policy connection that initializes global connection settings on demand
 func getPolicyConnector(clients interface{}) client.Connector {
 	return getPolicyConnectorWithHeaders(clients, nil, false, true)
@@ -1081,6 +1086,10 @@ func getPolicyConnectorWithHeaders(clients interface{}, customHeaders *map[strin
 
 func getPolicyEnforcementPoint(clients interface{}) string {
 	return clients.(nsxtClients).PolicyEnforcementPoint
+}
+
+func IsPolicyGlobalManager(clients interface{}) bool {
+	return isPolicyGlobalManager(clients)
 }
 
 func isPolicyGlobalManager(clients interface{}) bool {

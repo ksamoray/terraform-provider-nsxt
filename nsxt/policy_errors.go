@@ -107,6 +107,10 @@ func logVapiErrorData(message string, vapiMessages []std.LocalizableMessage, vap
 	return fmt.Errorf(details)
 }
 
+func LogAPIError(message string, err error) error {
+	return logAPIError(message, err)
+}
+
 func logAPIError(message string, err error) error {
 	if vapiError, ok := err.(errors.InvalidRequest); ok {
 		// Connection errors end up here
@@ -129,6 +133,10 @@ func logAPIError(message string, err error) error {
 	}
 
 	return err
+}
+
+func IsNotFoundError(err error) bool {
+	return isNotFoundError(err)
 }
 
 func isNotFoundError(err error) bool {
