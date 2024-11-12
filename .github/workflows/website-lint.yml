@@ -1,5 +1,4 @@
 name: website-lint
-
 on:
   pull_request:
 
