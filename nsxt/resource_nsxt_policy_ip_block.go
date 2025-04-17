@@ -46,7 +46,7 @@ func resourceNsxtPolicyIPBlock() *schema.Resource {
 			"cidr": {
 				Type:         schema.TypeString,
 				Description:  "Network address and the prefix length which will be associated with a layer-2 broadcast domain",
-				Required:     true,
+				Optional:     true,
 				ValidateFunc: validateCidr(),
 			},
 			"visibility": {
@@ -54,6 +54,15 @@ func resourceNsxtPolicyIPBlock() *schema.Resource {
 				Description:  "Visibility of the Ip Block. Cannot be updated once associated with other resources.",
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice(visibilityTypes, false),
+			},
+			"cidr_list": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Array of contiguous IP address spaces represented by network address and prefix length",
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validateCidr(),
+				},
 			},
 		},
 	}
@@ -104,6 +113,9 @@ func resourceNsxtPolicyIPBlockRead(d *schema.ResourceData, m interface{}) error 
 	if util.NsxVersionHigherOrEqual("4.2.0") {
 		d.Set("visibility", block.Visibility)
 	}
+	if util.NsxVersionHigherOrEqual("9.1.0") {
+		d.Set("cidr_list", block.CidrList)
+	}
 
 	return nil
 }
@@ -125,6 +137,7 @@ func resourceNsxtPolicyIPBlockCreate(d *schema.ResourceData, m interface{}) erro
 	cidr := d.Get("cidr").(string)
 	visibility := d.Get("visibility").(string)
 	tags := getPolicyTagsFromSchema(d)
+	cidrList := getStringListFromSchemaList(d, "cidr_list")
 
 	obj := model.IpAddressBlock{
 		DisplayName: &displayName,
@@ -135,6 +148,10 @@ func resourceNsxtPolicyIPBlockCreate(d *schema.ResourceData, m interface{}) erro
 	if util.NsxVersionHigherOrEqual("4.2.0") && len(visibility) > 0 {
 		obj.Visibility = &visibility
 	}
+	if util.NsxVersionHigherOrEqual("9.1.0") && len(cidrList) > 0 {
+		obj.CidrList = cidrList
+	}
+
 	// Create the resource using PATCH
 	log.Printf("[INFO] Creating IP Block with ID %s", id)
 	err = client.Patch(id, obj)
