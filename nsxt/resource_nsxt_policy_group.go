@@ -78,7 +78,7 @@ var externalMemberTypeValues = []string{
 	model.ExternalIDExpression_MEMBER_TYPE_VIRTUALMACHINE,
 	model.ExternalIDExpression_MEMBER_TYPE_VIRTUALNETWORKINTERFACE,
 	model.ExternalIDExpression_MEMBER_TYPE_CLOUDNATIVESERVICEINSTANCE,
-	model.ExternalIDExpression_MEMBER_TYPE_PHYSICALSERVER,
+	"PhysicalServer", // This value is gone from SDK in 9.1
 }
 
 var groupTypeValues = []string{

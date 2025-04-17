@@ -10,11 +10,11 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.36.1
 	github.com/stretchr/testify v1.10.0
 	github.com/vmware/go-vmware-nsxt v0.0.0-20220328155605-f49a14c1ef5f
-	github.com/vmware/vsphere-automation-sdk-go/lib v0.8.0
-	github.com/vmware/vsphere-automation-sdk-go/runtime v0.8.0
-	github.com/vmware/vsphere-automation-sdk-go/services/nsxt v0.12.1-0.20241113023437-5938c535c194
-	github.com/vmware/vsphere-automation-sdk-go/services/nsxt-gm v0.9.1-0.20241113023437-5938c535c194
-	github.com/vmware/vsphere-automation-sdk-go/services/nsxt-mp v0.6.1-0.20241113023437-5938c535c194
+	github.com/vmware/vsphere-automation-sdk-go/lib v0.7.1-0.20250416220357-d28317633b0e
+	github.com/vmware/vsphere-automation-sdk-go/runtime v0.7.1-0.20250416220357-d28317633b0e
+	github.com/vmware/vsphere-automation-sdk-go/services/nsxt v0.12.1-0.20250416220357-d28317633b0e
+	github.com/vmware/vsphere-automation-sdk-go/services/nsxt-gm v0.9.1-0.20250416220357-d28317633b0e
+	github.com/vmware/vsphere-automation-sdk-go/services/nsxt-mp v0.6.1-0.20250416220357-d28317633b0e
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 )
 
