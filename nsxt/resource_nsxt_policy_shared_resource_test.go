@@ -25,6 +25,7 @@ var accTestPolicySharedResourceUpdateAttributes = map[string]string{
 
 func TestAccResourceNsxtPolicySharedResource_basic(t *testing.T) {
 	testResourceName := "nsxt_policy_shared_resource.test"
+	testDataSourceName := "data.nsxt_policy_share.test"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck: func() {
@@ -38,7 +39,7 @@ func TestAccResourceNsxtPolicySharedResource_basic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNsxtPolicySharedResourceTemplate(true),
+				Config: testAccNsxtPolicySharedResourceTemplate(true, true),
 				Check: resource.ComposeTestCheckFunc(
 					testAccNsxtPolicySharedResourceExists(accTestPolicySharedResourceCreateAttributes["display_name"], testResourceName),
 					resource.TestCheckResourceAttr(testResourceName, "display_name", accTestPolicySharedResourceCreateAttributes["display_name"]),
@@ -47,10 +48,13 @@ func TestAccResourceNsxtPolicySharedResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(testResourceName, "path"),
 					resource.TestCheckResourceAttrSet(testResourceName, "revision"),
 					resource.TestCheckResourceAttr(testResourceName, "tag.#", "1"),
+
+					resource.TestCheckResourceAttrSet(testDataSourceName, "path"),
+					resource.TestCheckResourceAttrSet(testDataSourceName, "description"),
 				),
 			},
 			{
-				Config: testAccNsxtPolicySharedResourceTemplate(false),
+				Config: testAccNsxtPolicySharedResourceTemplate(false, true),
 				Check: resource.ComposeTestCheckFunc(
 					testAccNsxtPolicySharedResourceExists(accTestPolicySharedResourceUpdateAttributes["display_name"], testResourceName),
 					resource.TestCheckResourceAttr(testResourceName, "display_name", accTestPolicySharedResourceUpdateAttributes["display_name"]),
@@ -59,6 +63,9 @@ func TestAccResourceNsxtPolicySharedResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(testResourceName, "path"),
 					resource.TestCheckResourceAttrSet(testResourceName, "revision"),
 					resource.TestCheckResourceAttr(testResourceName, "tag.#", "1"),
+
+					resource.TestCheckResourceAttrSet(testDataSourceName, "path"),
+					resource.TestCheckResourceAttrSet(testDataSourceName, "description"),
 				),
 			},
 		},
@@ -123,7 +130,7 @@ func TestAccResourceNsxtPolicySharedResource_importBasic(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccNsxtPolicySharedResourceTemplate(true),
+				Config: testAccNsxtPolicySharedResourceTemplate(true, false),
 			},
 			{
 				ResourceName:      testResourceName,
@@ -190,14 +197,22 @@ func testAccNsxtPolicySharedResourceCheckDestroy(state *terraform.State, display
 	return nil
 }
 
-func testAccNsxtPolicySharedResourceTemplate(createFlow bool) string {
+func testAccNsxtPolicySharedResourceTemplate(createFlow, withDS bool) string {
 	var attrMap map[string]string
 	if createFlow {
 		attrMap = accTestPolicySharedResourceCreateAttributes
 	} else {
 		attrMap = accTestPolicySharedResourceUpdateAttributes
 	}
-	return testAccNsxtPolicyShareTemplate(createFlow, false) + testAccNsxtPolicyContextProfileReadTemplate("AMQP") + fmt.Sprintf(`
+	ds := ""
+	if withDS {
+		ds = `
+data "nsxt_policy_share" "test" {
+  display_name = nsxt_policy_share.test.display_name
+  depends_on = [nsxt_policy_shared_resource.test]
+}`
+	}
+	return testAccNsxtPolicyShareTemplate(createFlow) + testAccNsxtPolicyContextProfileReadTemplate("AMQP") + fmt.Sprintf(`
 resource "nsxt_policy_shared_resource" "test" {
   display_name = "%s"
   description  = "%s"
@@ -210,7 +225,7 @@ resource "nsxt_policy_shared_resource" "test" {
     scope = "scope1"
     tag   = "tag1"
   }
-}`, attrMap["display_name"], attrMap["description"])
+}`, attrMap["display_name"], attrMap["description"]) + ds
 }
 
 func testAccNsxtPolicySharedResourceMultitenancyTemplate(createFlow bool) string {
