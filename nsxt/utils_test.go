@@ -201,6 +201,14 @@ func testAccEnvDefined(t *testing.T, envVar string) {
 	}
 }
 
+func testAccGetDnsListenerIP() string {
+	return os.Getenv("NSXT_TEST_DNS_LISTENER_IP")
+}
+
+func testAccGetVnsClusterPath() string {
+	return os.Getenv("NSXT_TEST_VNS_CLUSTER_PATH")
+}
+
 func testAccIsGlobalManager() bool {
 	return os.Getenv("NSXT_GLOBAL_MANAGER") == "true" || os.Getenv("NSXT_GLOBAL_MANAGER") == "1"
 }
