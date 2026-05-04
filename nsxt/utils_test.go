@@ -220,6 +220,49 @@ func testAccEnvDefined(t *testing.T, envVar string) {
 	}
 }
 
+// testAccNsxtDnsVnaClusterTemplate returns HCL that creates an inline
+// VPC_SERVICES VNA cluster and a transit gateway required by PolicyDnsService,
+// then blocks until the cluster is realized.
+// Exposed references:
+//   - nsxt_policy_virtual_network_appliance_cluster.vna.path
+//   - nsxt_policy_transit_gateway.dns_tgw.path
+func testAccNsxtDnsVnaClusterTemplate(displayName string) string {
+	return fmt.Sprintf(`
+data "nsxt_policy_edge_transport_node" "vna" {
+  display_name = "%s"
+}
+
+data "nsxt_policy_transport_zone" "vna" {
+  display_name = "%s"
+}
+
+resource "nsxt_policy_transit_gateway" "dns_tgw" {
+  %s
+  display_name    = "%s-tgw"
+  transit_subnets = ["192.168.200.0/24"]
+}
+
+resource "nsxt_policy_virtual_network_appliance_cluster" "vna" {
+  display_name = "%s-vna"
+  service_type = "VPC_SERVICES"
+
+  member {
+    edge_transport_node_path = data.nsxt_policy_edge_transport_node.vna.path
+  }
+
+  advanced_configuration {
+    overlay_transport_zone_path = data.nsxt_policy_transport_zone.vna.path
+  }
+}
+
+data "nsxt_policy_virtual_network_appliance_cluster_realization" "vna" {
+  path = nsxt_policy_virtual_network_appliance_cluster.vna.path
+}
+`, getEdgeTransportNodeName(), getOverlayTransportZoneName(),
+		testAccNsxtProjectContext(), displayName,
+		displayName)
+}
+
 func testAccIsGlobalManager() bool {
 	return os.Getenv("NSXT_GLOBAL_MANAGER") == "true" || os.Getenv("NSXT_GLOBAL_MANAGER") == "1"
 }

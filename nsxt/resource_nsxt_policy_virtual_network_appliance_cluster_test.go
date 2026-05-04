@@ -54,6 +54,7 @@ func TestAccResourceNsxtPolicyVirtualNetworkApplianceCluster_basic(t *testing.T)
 					resource.TestCheckResourceAttr(testResourceName, "appliance_form_factor", "LARGE"),
 					resource.TestCheckResourceAttr(testResourceName, "advanced_configuration.#", "1"),
 					resource.TestCheckResourceAttr(testResourceName, "advanced_configuration.0.core_allocation_profile", "L4LBSERVICE"),
+					resource.TestCheckResourceAttrSet(testResourceName, "advanced_configuration.0.overlay_transport_zone_path"),
 					resource.TestCheckResourceAttr(testVNAClusterRealizationResourceName, "state", "SUCCESS"),
 				),
 			},
