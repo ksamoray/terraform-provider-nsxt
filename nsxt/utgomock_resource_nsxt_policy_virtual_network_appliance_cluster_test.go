@@ -25,6 +25,8 @@ import (
 	"github.com/vmware/terraform-provider-nsxt/nsxt/util"
 )
 
+var vnaStateSuccess = model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_SUCCESS
+
 var (
 	vnaClusterID       = "vna-cluster-1"
 	vnaClusterSitePath = "/infra/sites/default"
@@ -40,40 +42,53 @@ var (
 func setupVNAClusterMocks(ctrl *gomock.Controller) (
 	*epmocks.MockVirtualNetworkApplianceClustersClient,
 	*inframocks.MockSitesClient,
+	*epmocks.MockVirtualNetworkApplianceClusterStateClient,
 ) {
 	mockVNAClusters := epmocks.NewMockVirtualNetworkApplianceClustersClient(ctrl)
 	mockSites := inframocks.NewMockSitesClient(ctrl)
-	return mockVNAClusters, mockSites
+	mockState := epmocks.NewMockVirtualNetworkApplianceClusterStateClient(ctrl)
+	return mockVNAClusters, mockSites, mockState
 }
 
 func setupVNAClientOverride(
 	mockVNAClusters *epmocks.MockVirtualNetworkApplianceClustersClient,
 	mockSites *inframocks.MockSitesClient,
-) (func(), func()) {
+	mockState *epmocks.MockVirtualNetworkApplianceClusterStateClient,
+) func() {
 	vnaWrapper := &enforcementpoints.VirtualNetworkApplianceClusterClientContext{
 		Client:     mockVNAClusters,
 		ClientType: utl.Local,
 	}
-	siteWrapper := &cliinfra.SiteClientContext{
-		Client:     mockSites,
+	stateWrapper := &enforcementpoints.VirtualNetworkApplianceClusterStateClientContext{
+		Client:     mockState,
 		ClientType: utl.Local,
 	}
 
 	origVNA := cliVNAClustersClient
+	origState := cliVNAClusterStateClient
 	origSites := cliSitesClient
 
 	cliVNAClustersClient = func(sessionContext utl.SessionContext, connector client.Connector) *enforcementpoints.VirtualNetworkApplianceClusterClientContext {
 		return vnaWrapper
 	}
-	cliSitesClient = func(sessionContext utl.SessionContext, connector client.Connector) *cliinfra.SiteClientContext {
-		return siteWrapper
+	cliVNAClusterStateClient = func(sessionContext utl.SessionContext, connector client.Connector) *enforcementpoints.VirtualNetworkApplianceClusterStateClientContext {
+		return stateWrapper
+	}
+	if mockSites != nil {
+		siteWrapper := &cliinfra.SiteClientContext{
+			Client:     mockSites,
+			ClientType: utl.Local,
+		}
+		cliSitesClient = func(sessionContext utl.SessionContext, connector client.Connector) *cliinfra.SiteClientContext {
+			return siteWrapper
+		}
 	}
 
-	restore := func() {
+	return func() {
 		cliVNAClustersClient = origVNA
+		cliVNAClusterStateClient = origState
 		cliSitesClient = origSites
 	}
-	return restore, nil
 }
 
 func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterCreate(t *testing.T) {
@@ -83,8 +98,8 @@ func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterCreate(t *testing.T
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockVNAClusters, mockSites := setupVNAClusterMocks(ctrl)
-	restore, _ := setupVNAClientOverride(mockVNAClusters, mockSites)
+	mockVNAClusters, mockSites, mockState := setupVNAClusterMocks(ctrl)
+	restore := setupVNAClientOverride(mockVNAClusters, mockSites, mockState)
 	defer restore()
 
 	res := resourceNsxtPolicyVirtualNetworkApplianceCluster()
@@ -93,6 +108,9 @@ func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterCreate(t *testing.T
 		mockSites.EXPECT().Get(vnaClusterSiteID).Return(model.Site{}, nil)
 		mockVNAClusters.EXPECT().Get(vnaClusterSiteID, vnaClusterEPID, gomock.Any()).Return(model.VirtualNetworkApplianceCluster{}, vapiErrors.NotFound{})
 		mockVNAClusters.EXPECT().Patch(vnaClusterSiteID, vnaClusterEPID, gomock.Any(), gomock.Any()).Return(nil)
+		mockState.EXPECT().Get(vnaClusterSiteID, vnaClusterEPID, gomock.Any()).Return(model.VirtualNetworkApplianceClusterState{
+			ConsolidatedStatus: &vnaStateSuccess,
+		}, nil)
 		mockVNAClusters.EXPECT().Get(vnaClusterSiteID, vnaClusterEPID, gomock.Any()).Return(model.VirtualNetworkApplianceCluster{
 			DisplayName:         &vnaClusterName,
 			ApplianceFormFactor: &vnaFormFactor,
@@ -163,7 +181,7 @@ func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterRead(t *testing.T) 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockVNAClusters, _ := setupVNAClusterMocks(ctrl)
+	mockVNAClusters, _, _ := setupVNAClusterMocks(ctrl)
 
 	vnaWrapper := &enforcementpoints.VirtualNetworkApplianceClusterClientContext{
 		Client:     mockVNAClusters,
@@ -258,23 +276,18 @@ func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterUpdate(t *testing.T
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockVNAClusters, _ := setupVNAClusterMocks(ctrl)
-
-	vnaWrapper := &enforcementpoints.VirtualNetworkApplianceClusterClientContext{
-		Client:     mockVNAClusters,
-		ClientType: utl.Local,
-	}
-	origVNA := cliVNAClustersClient
-	defer func() { cliVNAClustersClient = origVNA }()
-	cliVNAClustersClient = func(sessionContext utl.SessionContext, connector client.Connector) *enforcementpoints.VirtualNetworkApplianceClusterClientContext {
-		return vnaWrapper
-	}
+	mockVNAClusters, _, mockState := setupVNAClusterMocks(ctrl)
+	restore := setupVNAClientOverride(mockVNAClusters, nil, mockState)
+	defer restore()
 
 	res := resourceNsxtPolicyVirtualNetworkApplianceCluster()
 
 	t.Run("Update_success", func(t *testing.T) {
 		updatedName := "vna-cluster-updated"
 		mockVNAClusters.EXPECT().Update(vnaClusterSiteID, vnaClusterEPID, vnaClusterID, gomock.Any()).Return(model.VirtualNetworkApplianceCluster{}, nil)
+		mockState.EXPECT().Get(vnaClusterSiteID, vnaClusterEPID, vnaClusterID).Return(model.VirtualNetworkApplianceClusterState{
+			ConsolidatedStatus: &vnaStateSuccess,
+		}, nil)
 		mockVNAClusters.EXPECT().Get(vnaClusterSiteID, vnaClusterEPID, vnaClusterID).Return(model.VirtualNetworkApplianceCluster{
 			DisplayName: &updatedName,
 			Path:        &vnaClusterPath,
@@ -314,7 +327,7 @@ func TestMockResourceNsxtPolicyVirtualNetworkApplianceClusterDelete(t *testing.T
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockVNAClusters, _ := setupVNAClusterMocks(ctrl)
+	mockVNAClusters, _, _ := setupVNAClusterMocks(ctrl)
 
 	vnaWrapper := &enforcementpoints.VirtualNetworkApplianceClusterClientContext{
 		Client:     mockVNAClusters,

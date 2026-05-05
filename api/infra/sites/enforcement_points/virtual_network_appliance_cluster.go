@@ -7,6 +7,7 @@ import (
 
 	vapiProtocolClient_ "github.com/vmware/vsphere-automation-sdk-go/runtime/protocol/client"
 	client0 "github.com/vmware/vsphere-automation-sdk-go/services/nsxt/infra/sites/enforcement_points"
+	stateClient0 "github.com/vmware/vsphere-automation-sdk-go/services/nsxt/infra/sites/enforcement_points/virtual_network_appliance_clusters"
 	model0 "github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
 
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
@@ -107,4 +108,33 @@ func (c VirtualNetworkApplianceClusterClientContext) Update(siteIdParam string, 
 		return obj, errors.New("invalid infrastructure for model")
 	}
 	return obj, err
+}
+
+type VirtualNetworkApplianceClusterStateClientContext struct {
+	Client     interface{}
+	ClientType utl.ClientType
+}
+
+func NewVirtualNetworkApplianceClusterStateClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *VirtualNetworkApplianceClusterStateClientContext {
+	switch sessionContext.ClientType {
+	case utl.Local:
+		return &VirtualNetworkApplianceClusterStateClientContext{
+			Client:     stateClient0.NewStateClient(connector),
+			ClientType: sessionContext.ClientType,
+		}
+	default:
+		return nil
+	}
+}
+
+func (c VirtualNetworkApplianceClusterStateClientContext) Get(siteIdParam string, enforcementpointIdParam string, virtualNetworkApplianceClusterIdParam string) (model0.VirtualNetworkApplianceClusterState, error) {
+	var obj model0.VirtualNetworkApplianceClusterState
+
+	switch c.ClientType {
+	case utl.Local:
+		client := c.Client.(stateClient0.StateClient)
+		return client.Get(siteIdParam, enforcementpointIdParam, virtualNetworkApplianceClusterIdParam)
+	default:
+		return obj, errors.New("invalid infrastructure for model")
+	}
 }

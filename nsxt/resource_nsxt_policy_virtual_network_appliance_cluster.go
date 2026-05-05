@@ -7,9 +7,11 @@ package nsxt
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	enforcement_points "github.com/vmware/terraform-provider-nsxt/api/infra/sites/enforcement_points"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/protocol/client"
 	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
@@ -18,6 +20,7 @@ import (
 )
 
 var cliVNAClustersClient = enforcement_points.NewVirtualNetworkApplianceClustersClient
+var cliVNAClusterStateClient = enforcement_points.NewVirtualNetworkApplianceClusterStateClient
 
 var vnaClusterFormFactorValues = []string{
 	model.VirtualNetworkApplianceCluster_APPLIANCE_FORM_FACTOR_SMALL,
@@ -173,19 +176,64 @@ func resourceNsxtPolicyVirtualNetworkApplianceClusterRead(d *schema.ResourceData
 	d.Set("service_type", obj.ServiceType)
 	d.Set("password_managed_by_vcf", obj.PasswordManagedByVcf)
 
-	// Only update members in state when the API returns a non-empty list.
-	// VNAs are provisioned asynchronously, so Members may be empty right after
-	// a Patch even though the intent was set. Preserving state avoids a spurious
-	// perpetual diff while the VNAs are being deployed.
-	if len(obj.Members) > 0 {
-		if err := setVNAClusterMembersInSchema(d, obj.Members); err != nil {
-			return err
-		}
+	if err := setVNAClusterMembersInSchema(d, obj.Members); err != nil {
+		return err
 	}
 	if err := setVNAClusterAdvancedConfigInSchema(d, obj.AdvancedConfiguration); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// waitForVNAClusterRealization polls the /state endpoint until ConsolidatedStatus
+// reaches SUCCESS (or ERROR), defaulting to a 30-minute timeout. This is required
+// because VNA instances are deployed asynchronously after a PATCH: without waiting,
+// the immediately-following Read would see an empty Members list and wipe it from state.
+func waitForVNAClusterRealization(siteID, epID, id string, connector client.Connector, sessionContext utl.SessionContext) error {
+	stateClient := cliVNAClusterStateClient(sessionContext, connector)
+	if stateClient == nil {
+		return policyResourceNotSupportedError()
+	}
+
+	pendingStates := []string{
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_UNINITIALIZED,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_IN_PROGRESS,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_SANDBOXED_REALIZATION_PENDING,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_UNKNOWN,
+	}
+	targetStates := []string{
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_SUCCESS,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_ERROR,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_DOWN,
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_DEGRAGED, //nolint:misspell
+		model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_DISABLED,
+	}
+
+	stateConf := &resource.StateChangeConf{
+		Pending: pendingStates,
+		Target:  targetStates,
+		Refresh: func() (interface{}, string, error) {
+			state, err := stateClient.Get(siteID, epID, id)
+			if err != nil {
+				return state, model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_ERROR,
+					logAPIError("Error while waiting for realization of VirtualNetworkApplianceCluster", err)
+			}
+			if state.ConsolidatedStatus == nil {
+				return state, model.VirtualNetworkApplianceClusterState_CONSOLIDATED_STATUS_UNKNOWN, nil
+			}
+			log.Printf("[DEBUG] VirtualNetworkApplianceCluster %s realization state: %s", id, *state.ConsolidatedStatus)
+			return state, *state.ConsolidatedStatus, nil
+		},
+		Timeout:    30 * time.Minute,
+		MinTimeout: 5 * time.Second,
+		Delay:      2 * time.Second,
+	}
+
+	_, err := stateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("failed to realize VirtualNetworkApplianceCluster %s: %v", id, err)
+	}
 	return nil
 }
 
@@ -353,6 +401,10 @@ func resourceNsxtPolicyVirtualNetworkApplianceClusterCreate(d *schema.ResourceDa
 	d.SetId(id)
 	d.Set("nsx_id", id)
 
+	if err := waitForVNAClusterRealization(siteID, epID, id, connector, sessionContext); err != nil {
+		return err
+	}
+
 	return resourceNsxtPolicyVirtualNetworkApplianceClusterRead(d, m)
 }
 
@@ -375,6 +427,10 @@ func resourceNsxtPolicyVirtualNetworkApplianceClusterUpdate(d *schema.ResourceDa
 	_, err = client.Update(siteID, epID, id, obj)
 	if err != nil {
 		return handleUpdateError("VirtualNetworkApplianceCluster", id, err)
+	}
+
+	if err := waitForVNAClusterRealization(siteID, epID, id, connector, sessionContext); err != nil {
+		return err
 	}
 
 	return resourceNsxtPolicyVirtualNetworkApplianceClusterRead(d, m)
