@@ -44,6 +44,11 @@ resource "nsxt_vpc_service_profile" "vpc1_service_profile" {
       }
     }
   }
+
+  dns_forwarder_config {
+    default_forwarder_zone_path = nsxt_policy_dns_forwarder_zone.default.path
+    log_level                   = "INFO"
+  }
 }
 ```
 
@@ -74,6 +79,11 @@ The following arguments are supported:
         If value is `true`, edge cluster will not be required. This is a DHCP server that dynamically assigns IP per VM port.
     * `dhcp_relay_config` - (Optional) DHCP Relay configuration
         * `server_addresses` - (Optional) List of DHCP server IP addresses for DHCP relay configuration. Both IPv4 and IPv6 addresses are supported.
+* `dns_forwarder_config` - (Optional) DNS forwarder configuration for this profile
+    * `default_forwarder_zone_path` - (Optional) Policy path of the default DNS forwarder zone. DNS requests are forwarded to this zone by default.
+    * `conditional_forwarder_zone_paths` - (Optional) List of policy paths of conditional DNS forwarder zones.
+    * `cache_size` - (Optional) DNS answer cache size in KB. One cache entry consumes approximately 120 bytes, so 1 KB can hold approximately 8 entries.
+    * `log_level` - (Optional) Log level for the DNS forwarder. One of `DEBUG`, `INFO`, `WARNING`, `ERROR`, `FATAL`.
 
 ## Attributes Reference
 

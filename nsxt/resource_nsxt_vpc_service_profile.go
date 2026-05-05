@@ -10,6 +10,7 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/vmware/terraform-provider-nsxt/api/orgs/projects"
 	"github.com/vmware/vsphere-automation-sdk-go/runtime/protocol/client"
 	"github.com/vmware/vsphere-automation-sdk-go/services/nsxt/model"
@@ -240,6 +241,79 @@ var vpcServiceProfileSchema = map[string]*metadata.ExtendedSchema{
 		Metadata: metadata.Metadata{
 			SchemaType:   "string",
 			SdkFieldName: "QosProfile",
+		},
+	},
+	"dns_forwarder_config": {
+		Schema: schema.Schema{
+			Type:     schema.TypeList,
+			MaxItems: 1,
+			Optional: true,
+			Elem: &metadata.ExtendedResource{
+				Schema: map[string]*metadata.ExtendedSchema{
+					"default_forwarder_zone_path": {
+						Schema: schema.Schema{
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validatePolicyPath(),
+						},
+						Metadata: metadata.Metadata{
+							SchemaType:   "string",
+							SdkFieldName: "DefaultForwarderZonePath",
+						},
+					},
+					"conditional_forwarder_zone_paths": {
+						Schema: schema.Schema{
+							Type: schema.TypeList,
+							Elem: &metadata.ExtendedSchema{
+								Schema: schema.Schema{
+									Type:         schema.TypeString,
+									ValidateFunc: validatePolicyPath(),
+								},
+								Metadata: metadata.Metadata{
+									SchemaType: "string",
+								},
+							},
+							Optional: true,
+						},
+						Metadata: metadata.Metadata{
+							SchemaType:   "list",
+							SdkFieldName: "ConditionalForwarderZonePaths",
+						},
+					},
+					"cache_size": {
+						Schema: schema.Schema{
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						Metadata: metadata.Metadata{
+							SchemaType:   "int",
+							SdkFieldName: "CacheSize",
+						},
+					},
+					"log_level": {
+						Schema: schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								model.PolicyVpcDnsForwarder_LOG_LEVEL_DEBUG,
+								model.PolicyVpcDnsForwarder_LOG_LEVEL_INFO,
+								model.PolicyVpcDnsForwarder_LOG_LEVEL_WARNING,
+								model.PolicyVpcDnsForwarder_LOG_LEVEL_ERROR,
+								model.PolicyVpcDnsForwarder_LOG_LEVEL_FATAL,
+							}, false),
+						},
+						Metadata: metadata.Metadata{
+							SchemaType:   "string",
+							SdkFieldName: "LogLevel",
+						},
+					},
+				},
+			},
+		},
+		Metadata: metadata.Metadata{
+			SchemaType:   "struct",
+			SdkFieldName: "DnsForwarderConfig",
+			ReflectType:  reflect.TypeOf(model.PolicyVpcDnsForwarder{}),
 		},
 	},
 }

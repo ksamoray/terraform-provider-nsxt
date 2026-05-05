@@ -30,6 +30,8 @@ var accTestPolicyVpcServiceProfileUpdateAttributes = map[string]string{
 	"server_addresses": "11.11.11.111",
 }
 
+var accTestPolicyVpcServiceProfileDnsForwarderHelper = getAccTestResourceName()
+
 func TestAccResourceNsxtVpcServiceProfile_basic(t *testing.T) {
 	testResourceName := "nsxt_vpc_service_profile.test"
 	testDataSourceName := "data.nsxt_vpc_service_profile.test"
@@ -167,6 +169,52 @@ func TestAccResourceNsxtVpcServiceProfile_importBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateIdFunc: testAccResourceNsxtPolicyImportIDRetriever(testResourceName),
+			},
+		},
+	})
+}
+
+func TestAccResourceNsxtVpcServiceProfile_dnsForwarder(t *testing.T) {
+	testResourceName := "nsxt_vpc_service_profile.test"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t); testAccOnlyVPC(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(state *terraform.State) error {
+			return testAccNsxtVpcServiceProfileCheckDestroy(state, accTestPolicyVpcServiceProfileDnsForwarderHelper)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNsxtVpcServiceProfileWithDnsForwarder(false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccNsxtVpcServiceProfileExists(testResourceName),
+					resource.TestCheckResourceAttr(testResourceName, "display_name", accTestPolicyVpcServiceProfileDnsForwarderHelper),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.#", "1"),
+					resource.TestCheckResourceAttrSet(testResourceName, "dns_forwarder_config.0.default_forwarder_zone_path"),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.0.conditional_forwarder_zone_paths.#", "0"),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.0.log_level", "INFO"),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.0.cache_size", "1024"),
+					resource.TestCheckResourceAttrSet(testResourceName, "nsx_id"),
+					resource.TestCheckResourceAttrSet(testResourceName, "path"),
+					resource.TestCheckResourceAttrSet(testResourceName, "revision"),
+				),
+			},
+			{
+				Config: testAccNsxtVpcServiceProfileWithDnsForwarder(true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccNsxtVpcServiceProfileExists(testResourceName),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.#", "1"),
+					resource.TestCheckResourceAttrSet(testResourceName, "dns_forwarder_config.0.default_forwarder_zone_path"),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.0.conditional_forwarder_zone_paths.#", "1"),
+					resource.TestCheckResourceAttrSet(testResourceName, "dns_forwarder_config.0.conditional_forwarder_zone_paths.0"),
+				),
+			},
+			{
+				Config: testAccNsxtVpcServiceProfileMinimalistic(accTestPolicyVpcServiceProfileDnsForwarderHelper),
+				Check: resource.ComposeTestCheckFunc(
+					testAccNsxtVpcServiceProfileExists(testResourceName),
+					resource.TestCheckResourceAttr(testResourceName, "dns_forwarder_config.#", "0"),
+				),
 			},
 		},
 	})
@@ -320,4 +368,43 @@ resource "nsxt_vpc_service_profile" "test" {
   dhcp_config {
   }
 }`, testAccNsxtProjectContext(), displayName)
+}
+
+func testAccNsxtVpcServiceProfileWithDnsForwarder(withConditional bool) string {
+	conditionalZone := ""
+	conditionalPaths := ""
+	if withConditional {
+		conditionalZone = fmt.Sprintf(`
+resource "nsxt_policy_dns_forwarder_zone" "conditional" {
+  %s
+  display_name     = "%s-cond"
+  dns_domain_names = ["corp.example.com"]
+  upstream_servers = ["1.1.1.1"]
+}`, testAccNsxtProjectContext(), accTestPolicyVpcServiceProfileDnsForwarderHelper)
+		conditionalPaths = `
+    conditional_forwarder_zone_paths = [nsxt_policy_dns_forwarder_zone.conditional.path]`
+	}
+	return fmt.Sprintf(`
+resource "nsxt_policy_dns_forwarder_zone" "test" {
+  %s
+  display_name     = "%s"
+  upstream_servers = ["8.8.8.8"]
+}
+%s
+resource "nsxt_vpc_service_profile" "test" {
+  %s
+  display_name = "%s"
+
+  dhcp_config {
+  }
+
+  dns_forwarder_config {
+    default_forwarder_zone_path = nsxt_policy_dns_forwarder_zone.test.path%s
+    log_level                   = "INFO"
+    cache_size                  = 1024
+  }
+}`, testAccNsxtProjectContext(), accTestPolicyVpcServiceProfileDnsForwarderHelper,
+		conditionalZone,
+		testAccNsxtProjectContext(), accTestPolicyVpcServiceProfileDnsForwarderHelper,
+		conditionalPaths)
 }
