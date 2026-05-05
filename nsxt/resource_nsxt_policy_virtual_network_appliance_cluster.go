@@ -86,6 +86,7 @@ func resourceNsxtPolicyVirtualNetworkApplianceCluster() *schema.Resource {
 			"password_managed_by_vcf": {
 				Type:        schema.TypeBool,
 				Optional:    true,
+				Computed:    true,
 				Description: "Enable VCF password management for all virtual network appliances in the cluster",
 			},
 			"member": {
@@ -129,6 +130,7 @@ func resourceNsxtPolicyVirtualNetworkApplianceCluster() *schema.Resource {
 						"high_availability_profile": {
 							Type:         schema.TypeString,
 							Optional:     true,
+							Computed:     true,
 							Description:  "Path to the high availability profile",
 							ValidateFunc: validatePolicyPath(),
 						},
@@ -171,8 +173,14 @@ func resourceNsxtPolicyVirtualNetworkApplianceClusterRead(d *schema.ResourceData
 	d.Set("service_type", obj.ServiceType)
 	d.Set("password_managed_by_vcf", obj.PasswordManagedByVcf)
 
-	if err := setVNAClusterMembersInSchema(d, obj.Members); err != nil {
-		return err
+	// Only update members in state when the API returns a non-empty list.
+	// VNAs are provisioned asynchronously, so Members may be empty right after
+	// a Patch even though the intent was set. Preserving state avoids a spurious
+	// perpetual diff while the VNAs are being deployed.
+	if len(obj.Members) > 0 {
+		if err := setVNAClusterMembersInSchema(d, obj.Members); err != nil {
+			return err
+		}
 	}
 	if err := setVNAClusterAdvancedConfigInSchema(d, obj.AdvancedConfiguration); err != nil {
 		return err
