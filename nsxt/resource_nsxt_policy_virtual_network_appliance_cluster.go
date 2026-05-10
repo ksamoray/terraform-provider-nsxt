@@ -159,6 +159,9 @@ func resourceNsxtPolicyVirtualNetworkApplianceClusterRead(d *schema.ResourceData
 	connector := getPolicyConnector(m)
 	sessionContext := getSessionContext(d, m)
 	client := cliVNAClustersClient(sessionContext, connector)
+	if client == nil {
+		return policyResourceNotSupportedError()
+	}
 
 	id, siteID, epID, err := policyIDSiteEPTuple(d, m)
 	if err != nil {
@@ -298,12 +301,18 @@ func getVNAClusterAdvancedConfigFromSchema(d *schema.ResourceData) (*model.Virtu
 func resourceNsxtPolicyVirtualNetworkApplianceClusterExists(siteID, epID, id string, connector client.Connector) (bool, error) {
 	sessionContext := utl.SessionContext{ClientType: utl.Local}
 	siteClient := cliSitesClient(sessionContext, connector)
+	if siteClient == nil {
+		return false, policyResourceNotSupportedError()
+	}
 	_, err := siteClient.Get(siteID)
 	if err != nil {
 		msg := fmt.Sprintf("failed to read site %s", siteID)
 		return false, logAPIError(msg, err)
 	}
 	vnaClient := cliVNAClustersClient(sessionContext, connector)
+	if vnaClient == nil {
+		return false, policyResourceNotSupportedError()
+	}
 	_, err = vnaClient.Get(siteID, epID, id)
 	if err == nil {
 		return true, nil
