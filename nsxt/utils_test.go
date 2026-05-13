@@ -160,6 +160,10 @@ func getOverlayTransportZoneName() string {
 	return name
 }
 
+func getPortgroupID() string {
+	return os.Getenv("NSXT_TEST_PORTGROUP_ID")
+}
+
 func getTestVMID(isMultitenancy bool) string {
 	if isMultitenancy {
 		return os.Getenv("NSXT_TEST_MULTITENANCY_VM_ID")
