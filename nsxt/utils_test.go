@@ -132,6 +132,14 @@ func getVNAHostname() string {
 	return name
 }
 
+func getEdgeHostname() string {
+	name := os.Getenv("NSXT_TEST_EDGE_HOSTNAME")
+	if name == "" {
+		name = "test-edge.example.com"
+	}
+	return name
+}
+
 func getHostTransportNodeName() string {
 	return os.Getenv("NSXT_TEST_HOST_TRANSPORT_NODE")
 }
@@ -295,6 +303,15 @@ func testAccTestFabric(t *testing.T) {
 	if !testAccIsFabric() {
 		t.Skipf("Fabric testing is not enabled")
 	}
+}
+
+func testAccEdgeTransportNodePreCheck(t *testing.T) {
+	testAccPreCheck(t)
+	testAccOnlyLocalManager(t)
+	testAccEnvDefined(t, "NSXT_TEST_COMPUTE_MANAGER")
+	testAccEnvDefined(t, "NSXT_TEST_COMPUTE_COLLECTION")
+	testAccEnvDefined(t, "NSXT_TEST_DATASTORE_ID")
+	testAccEnvDefined(t, "NSXT_TEST_PORTGROUP_ID")
 }
 
 func getTestVCUsername() string {
