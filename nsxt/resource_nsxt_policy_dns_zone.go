@@ -18,7 +18,7 @@ import (
 	"github.com/vmware/terraform-provider-nsxt/nsxt/util"
 )
 
-var cliProjectDnsZonesClient = dnssvcs.NewZonesClient
+var cliDnsZonesClient = dnssvcs.NewZonesClient
 
 var policyDnsZonePathExample = "/orgs/[org]/projects/[project]/dns-services/[dns-service]"
 
@@ -38,18 +38,21 @@ func resourceNsxtPolicyDnsZone() *schema.Resource {
 			"description":  getDescriptionSchema(),
 			"revision":     getRevisionSchema(),
 			"tag":          getTagsSchema(),
-			"parent_path":  getPolicyPathSchema(true, true, "Policy path of the parent PolicyDnsService"),
+			"parent_path":  getPolicyPathSchema(true, true, "Policy path of the parent DnsService"),
 			"dns_domain_name": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "The domain name for this zone (e.g. 'example.com'). Immutable after creation.",
 			},
-			"scope": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validatePolicyPath(),
-				Description:  "Optional policy path to a single VPC for split-horizon DNS. When unset, all VPCs can resolve this zone.",
+			"resolution_scope": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validatePolicyPath(),
+				},
+				Description: "Optional list of VPC policy paths for split-horizon DNS. When set, only workloads in the specified VPCs can resolve this zone. When empty, all VPCs in the project can resolve it.",
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
@@ -112,7 +115,7 @@ func resourceNsxtPolicyDnsZoneExists(sessionContext utl.SessionContext, parentPa
 	if pathErr != nil {
 		return false, pathErr
 	}
-	c := cliProjectDnsZonesClient(sessionContext, connector)
+	c := cliDnsZonesClient(sessionContext, connector)
 	if c == nil {
 		return false, fmt.Errorf("unsupported client type for DNS zone")
 	}
@@ -126,14 +129,14 @@ func resourceNsxtPolicyDnsZoneExists(sessionContext utl.SessionContext, parentPa
 	return false, logAPIError("Error retrieving resource", err)
 }
 
-func policyDnsZoneFromSchema(d *schema.ResourceData) model.ProjectDnsZone {
+func policyDnsZoneFromSchema(d *schema.ResourceData) model.DnsZone {
 	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	tags := getPolicyTagsFromSchema(d)
 	dnsDomain := d.Get("dns_domain_name").(string)
 	ttl := int64(d.Get("ttl").(int))
 
-	obj := model.ProjectDnsZone{
+	obj := model.DnsZone{
 		DisplayName:   &displayName,
 		Description:   &description,
 		Tags:          tags,
@@ -141,15 +144,12 @@ func policyDnsZoneFromSchema(d *schema.ResourceData) model.ProjectDnsZone {
 		Ttl:           &ttl,
 	}
 
-	if scope, ok := d.GetOk("scope"); ok {
-		scopeStr := scope.(string)
-		obj.Scope = &scopeStr
-	}
+	obj.ResolutionScope = getStringListFromSchemaList(d, "resolution_scope")
 
 	soaList := d.Get("soa").([]interface{})
 	if len(soaList) > 0 {
 		soaMap := soaList[0].(map[string]interface{})
-		soa := &model.ProjectDnsZoneSoa{}
+		soa := &model.DnsZoneSoa{}
 		if v, ok := soaMap["primary_nameserver"].(string); ok && v != "" {
 			soa.PrimaryNameserver = &v
 		}
@@ -176,7 +176,7 @@ func policyDnsZoneFromSchema(d *schema.ResourceData) model.ProjectDnsZone {
 			nc := int64(v)
 			soa.NegativeCacheTtl = &nc
 		}
-		if !reflect.DeepEqual(soa, &model.ProjectDnsZoneSoa{}) {
+		if !reflect.DeepEqual(soa, &model.DnsZoneSoa{}) {
 			obj.Soa = soa
 		}
 	}
@@ -184,7 +184,7 @@ func policyDnsZoneFromSchema(d *schema.ResourceData) model.ProjectDnsZone {
 	return obj
 }
 
-func policyDnsZoneToSchema(d *schema.ResourceData, obj model.ProjectDnsZone) {
+func policyDnsZoneToSchema(d *schema.ResourceData, obj model.DnsZone) {
 	setPolicyTagsInSchema(d, obj.Tags)
 	d.Set("display_name", obj.DisplayName)
 	d.Set("description", obj.Description)
@@ -195,9 +195,7 @@ func policyDnsZoneToSchema(d *schema.ResourceData, obj model.ProjectDnsZone) {
 	if obj.Ttl != nil {
 		d.Set("ttl", int(*obj.Ttl))
 	}
-	if obj.Scope != nil {
-		d.Set("scope", obj.Scope)
-	}
+	d.Set("resolution_scope", obj.ResolutionScope)
 	if obj.Soa != nil {
 		soaMap := map[string]interface{}{}
 		if obj.Soa.PrimaryNameserver != nil {
@@ -252,15 +250,15 @@ func resourceNsxtPolicyDnsZoneCreate(d *schema.ResourceData, m interface{}) erro
 	}
 
 	obj := policyDnsZoneFromSchema(d)
-	log.Printf("[INFO] Creating ProjectDnsZone with ID %s under %s", id, parentPath)
+	log.Printf("[INFO] Creating DnsZone with ID %s under %s", id, parentPath)
 
-	c := cliProjectDnsZonesClient(sessionContext, connector)
+	c := cliDnsZonesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS zone")
 	}
 	err = c.Patch(org, project, dnsServiceID, id, obj)
 	if err != nil {
-		return handleCreateError("ProjectDnsZone", id, err)
+		return handleCreateError("DnsZone", id, err)
 	}
 	d.SetId(id)
 	d.Set("nsx_id", id)
@@ -272,7 +270,7 @@ func resourceNsxtPolicyDnsZoneRead(d *schema.ResourceData, m interface{}) error 
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsZone ID")
+		return fmt.Errorf("error obtaining DnsZone ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -282,13 +280,13 @@ func resourceNsxtPolicyDnsZoneRead(d *schema.ResourceData, m interface{}) error 
 		return pathErr
 	}
 
-	c := cliProjectDnsZonesClient(sessionContext, connector)
+	c := cliDnsZonesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS zone")
 	}
 	obj, err := c.Get(org, project, dnsServiceID, id)
 	if err != nil {
-		return handleReadError(d, "ProjectDnsZone", id, err)
+		return handleReadError(d, "DnsZone", id, err)
 	}
 	policyDnsZoneToSchema(d, obj)
 	return nil
@@ -299,7 +297,7 @@ func resourceNsxtPolicyDnsZoneUpdate(d *schema.ResourceData, m interface{}) erro
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsZone ID")
+		return fmt.Errorf("error obtaining DnsZone ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -313,14 +311,14 @@ func resourceNsxtPolicyDnsZoneUpdate(d *schema.ResourceData, m interface{}) erro
 	obj := policyDnsZoneFromSchema(d)
 	obj.Revision = &revision
 
-	c := cliProjectDnsZonesClient(sessionContext, connector)
+	c := cliDnsZonesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS zone")
 	}
 	_, err := c.Update(org, project, dnsServiceID, id, obj)
 	if err != nil {
 		d.Partial(true)
-		return handleUpdateError("ProjectDnsZone", id, err)
+		return handleUpdateError("DnsZone", id, err)
 	}
 	return resourceNsxtPolicyDnsZoneRead(d, m)
 }
@@ -330,7 +328,7 @@ func resourceNsxtPolicyDnsZoneDelete(d *schema.ResourceData, m interface{}) erro
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsZone ID")
+		return fmt.Errorf("error obtaining DnsZone ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -340,13 +338,13 @@ func resourceNsxtPolicyDnsZoneDelete(d *schema.ResourceData, m interface{}) erro
 		return pathErr
 	}
 
-	c := cliProjectDnsZonesClient(sessionContext, connector)
+	c := cliDnsZonesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS zone")
 	}
 	err := c.Delete(org, project, dnsServiceID, id)
 	if err != nil {
-		return handleDeleteError("ProjectDnsZone", id, err)
+		return handleDeleteError("DnsZone", id, err)
 	}
 	return nil
 }

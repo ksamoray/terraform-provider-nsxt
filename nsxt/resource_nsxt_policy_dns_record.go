@@ -23,11 +23,11 @@ var cliProjectDnsRecordsClient = projects.NewDnsRecordsClient
 var policyDnsRecordPathExample = "/orgs/[org]/projects/[project]/dns-records/[dns-record]"
 
 var dnsRecordTypeValues = []string{
-	model.ProjectDnsRecord_RECORD_TYPE_A,
-	model.ProjectDnsRecord_RECORD_TYPE_AAAA,
-	model.ProjectDnsRecord_RECORD_TYPE_CNAME,
-	model.ProjectDnsRecord_RECORD_TYPE_PTR,
-	model.ProjectDnsRecord_RECORD_TYPE_NS,
+	model.DnsRecord_RECORD_TYPE_A,
+	model.DnsRecord_RECORD_TYPE_AAAA,
+	model.DnsRecord_RECORD_TYPE_CNAME,
+	model.DnsRecord_RECORD_TYPE_PTR,
+	model.DnsRecord_RECORD_TYPE_NS,
 }
 
 func resourceNsxtPolicyDnsRecord() *schema.Resource {
@@ -111,7 +111,7 @@ func resourceNsxtPolicyDnsRecordExists(sessionContext utl.SessionContext, id str
 	return false, logAPIError("Error retrieving resource", err)
 }
 
-func policyDnsRecordFromSchema(d *schema.ResourceData) model.ProjectDnsRecord {
+func policyDnsRecordFromSchema(d *schema.ResourceData) model.DnsRecord {
 	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	tags := getPolicyTagsFromSchema(d)
@@ -121,7 +121,7 @@ func policyDnsRecordFromSchema(d *schema.ResourceData) model.ProjectDnsRecord {
 	zonePath := d.Get("zone_path").(string)
 	ttl := int64(d.Get("ttl").(int))
 
-	obj := model.ProjectDnsRecord{
+	obj := model.DnsRecord{
 		DisplayName:  &displayName,
 		Description:  &description,
 		Tags:         tags,
@@ -155,7 +155,7 @@ func resourceNsxtPolicyDnsRecordCreate(d *schema.ResourceData, m interface{}) er
 	parents := getVpcParentsFromContext(sessionContext)
 	obj := policyDnsRecordFromSchema(d)
 
-	log.Printf("[INFO] Creating ProjectDnsRecord with ID %s", id)
+	log.Printf("[INFO] Creating DnsRecord with ID %s", id)
 	c := cliProjectDnsRecordsClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS record")
@@ -175,7 +175,7 @@ func resourceNsxtPolicyDnsRecordRead(d *schema.ResourceData, m interface{}) erro
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRecord ID")
+		return fmt.Errorf("error obtaining DnsRecord ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -216,7 +216,7 @@ func resourceNsxtPolicyDnsRecordUpdate(d *schema.ResourceData, m interface{}) er
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRecord ID")
+		return fmt.Errorf("error obtaining DnsRecord ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -242,7 +242,7 @@ func resourceNsxtPolicyDnsRecordDelete(d *schema.ResourceData, m interface{}) er
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRecord ID")
+		return fmt.Errorf("error obtaining DnsRecord ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)

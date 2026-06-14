@@ -11,9 +11,9 @@ import (
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
 )
 
-type PolicyDnsServiceClientContext utl.ClientContext
+type DnsServiceClientContext utl.ClientContext
 
-func NewDnsServicesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *PolicyDnsServiceClientContext {
+func NewDnsServicesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *DnsServiceClientContext {
 	var client interface{}
 
 	switch sessionContext.ClientType {
@@ -24,10 +24,10 @@ func NewDnsServicesClient(sessionContext utl.SessionContext, connector vapiProto
 	default:
 		return nil
 	}
-	return &PolicyDnsServiceClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
+	return &DnsServiceClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
 }
 
-func (c PolicyDnsServiceClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string) error {
+func (c DnsServiceClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string) error {
 	var err error
 
 	switch c.ClientType {
@@ -42,8 +42,8 @@ func (c PolicyDnsServiceClientContext) Delete(orgIdParam string, projectIdParam 
 	return err
 }
 
-func (c PolicyDnsServiceClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string) (model0.PolicyDnsService, error) {
-	var obj model0.PolicyDnsService
+func (c DnsServiceClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string) (model0.DnsService, error) {
+	var obj model0.DnsService
 	var err error
 
 	switch c.ClientType {
@@ -61,7 +61,7 @@ func (c PolicyDnsServiceClientContext) Get(orgIdParam string, projectIdParam str
 	return obj, err
 }
 
-func (c PolicyDnsServiceClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model0.PolicyDnsService) error {
+func (c DnsServiceClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model0.DnsService) error {
 	var err error
 
 	switch c.ClientType {
@@ -76,9 +76,9 @@ func (c PolicyDnsServiceClientContext) Patch(orgIdParam string, projectIdParam s
 	return err
 }
 
-func (c PolicyDnsServiceClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model0.PolicyDnsService) (model0.PolicyDnsService, error) {
+func (c DnsServiceClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model0.DnsService) (model0.DnsService, error) {
 	var err error
-	var obj model0.PolicyDnsService
+	var obj model0.DnsService
 
 	switch c.ClientType {
 

@@ -31,10 +31,10 @@ var (
 	projectDnsZoneParentPath  = "/orgs/default/projects/project1/dns-services/dns-svc-1"
 )
 
-func projectDnsZoneAPIResponse() nsxModel.ProjectDnsZone {
+func projectDnsZoneAPIResponse() nsxModel.DnsZone {
 	domain := "example.com"
 	ttl := int64(300)
-	return nsxModel.ProjectDnsZone{
+	return nsxModel.DnsZone{
 		Id:            &projectDnsZoneID,
 		DisplayName:   &projectDnsZoneDisplayName,
 		Description:   &projectDnsZoneDescription,
@@ -57,17 +57,17 @@ func minimalProjectDnsZoneData() map[string]interface{} {
 
 func setupDnsZoneMock(t *testing.T, ctrl *gomock.Controller) (*dnssvcsmocks.MockZonesClient, func()) {
 	mockSDK := dnssvcsmocks.NewMockZonesClient(ctrl)
-	mockWrapper := &dnssvcsapi.ProjectDnsZoneClientContext{
+	mockWrapper := &dnssvcsapi.DnsZoneClientContext{
 		Client:     mockSDK,
 		ClientType: utl.Multitenancy,
 		ProjectID:  "project1",
 	}
 
-	original := cliProjectDnsZonesClient
-	cliProjectDnsZonesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *dnssvcsapi.ProjectDnsZoneClientContext {
+	original := cliDnsZonesClient
+	cliDnsZonesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *dnssvcsapi.DnsZoneClientContext {
 		return mockWrapper
 	}
-	return mockSDK, func() { cliProjectDnsZonesClient = original }
+	return mockSDK, func() { cliDnsZonesClient = original }
 }
 
 func TestMockResourceNsxtPolicyDnsZoneCreate(t *testing.T) {
@@ -82,7 +82,7 @@ func TestMockResourceNsxtPolicyDnsZoneCreate(t *testing.T) {
 
 		notFoundErr := vapiErrors.NotFound{}
 		gomock.InOrder(
-			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID).Return(nsxModel.ProjectDnsZone{}, notFoundErr),
+			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID).Return(nsxModel.DnsZone{}, notFoundErr),
 			mockSDK.EXPECT().Patch(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID, gomock.Any()).Return(nil),
 			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID).Return(projectDnsZoneAPIResponse(), nil),
 		)
@@ -132,7 +132,7 @@ func TestMockResourceNsxtPolicyDnsZoneRead(t *testing.T) {
 		mockSDK, restore := setupDnsZoneMock(t, ctrl)
 		defer restore()
 
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID).Return(nsxModel.ProjectDnsZone{}, vapiErrors.NotFound{})
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), projectDnsZoneID).Return(nsxModel.DnsZone{}, vapiErrors.NotFound{})
 
 		res := resourceNsxtPolicyDnsZone()
 		d := schema.TestResourceDataRaw(t, res.Schema, minimalProjectDnsZoneData())

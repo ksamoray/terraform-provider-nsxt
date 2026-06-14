@@ -30,45 +30,45 @@ var (
 	dnsARCRevision    = int64(1)
 )
 
-func dnsARCAPIResponse() nsxModel.ProjectDnsAutoRecordConfig {
+func dnsARCAPIResponse() nsxModel.DnsAutoRecordConfig {
 	ipBlock := "/infra/ip-blocks/block-1"
-	zonePath := "/orgs/default/projects/p1/dns-services/svc1/zones/zone1"
+	aRecordZonePath := "/orgs/default/projects/p1/dns-services/svc1/zones/zone1"
 	ttl := int64(300)
-	return nsxModel.ProjectDnsAutoRecordConfig{
-		Id:          &dnsARCID,
-		DisplayName: &dnsARCDisplayName,
-		Description: &dnsARCDescription,
-		Revision:    &dnsARCRevision,
-		IpBlockPath: &ipBlock,
-		ZonePath:    &zonePath,
-		Ttl:         &ttl,
+	return nsxModel.DnsAutoRecordConfig{
+		Id:              &dnsARCID,
+		DisplayName:     &dnsARCDisplayName,
+		Description:     &dnsARCDescription,
+		Revision:        &dnsARCRevision,
+		IpBlockPath:     &ipBlock,
+		ARecordZonePath: &aRecordZonePath,
+		Ttl:             &ttl,
 	}
 }
 
 func minimalDnsARCData() map[string]interface{} {
 	return map[string]interface{}{
-		"display_name":  dnsARCDisplayName,
-		"description":   dnsARCDescription,
-		"nsx_id":        dnsARCID,
-		"ip_block_path": "/infra/ip-blocks/block-1",
-		"zone_path":     "/orgs/default/projects/p1/dns-services/svc1/zones/zone1",
-		"ttl":           300,
+		"display_name":       dnsARCDisplayName,
+		"description":        dnsARCDescription,
+		"nsx_id":             dnsARCID,
+		"ip_block_path":      "/infra/ip-blocks/block-1",
+		"a_record_zone_path": "/orgs/default/projects/p1/dns-services/svc1/zones/zone1",
+		"ttl":                300,
 	}
 }
 
 func setupDnsARCMock(t *testing.T, ctrl *gomock.Controller) (*projectmocks.MockDnsAutoRecordConfigsClient, func()) {
 	mockSDK := projectmocks.NewMockDnsAutoRecordConfigsClient(ctrl)
-	mockWrapper := &apiprojects.ProjectDnsAutoRecordConfigClientContext{
+	mockWrapper := &apiprojects.DnsAutoRecordConfigClientContext{
 		Client:     mockSDK,
 		ClientType: utl.Multitenancy,
 		ProjectID:  "project1",
 	}
 
-	original := cliProjectDnsAutoRecordConfigsClient
-	cliProjectDnsAutoRecordConfigsClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.ProjectDnsAutoRecordConfigClientContext {
+	original := cliDnsAutoRecordConfigsClient
+	cliDnsAutoRecordConfigsClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.DnsAutoRecordConfigClientContext {
 		return mockWrapper
 	}
-	return mockSDK, func() { cliProjectDnsAutoRecordConfigsClient = original }
+	return mockSDK, func() { cliDnsAutoRecordConfigsClient = original }
 }
 
 func TestMockResourceNsxtPolicyDnsRecordAutoConfigCreate(t *testing.T) {
@@ -83,7 +83,7 @@ func TestMockResourceNsxtPolicyDnsRecordAutoConfigCreate(t *testing.T) {
 
 		notFoundErr := vapiErrors.NotFound{}
 		gomock.InOrder(
-			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsARCID).Return(nsxModel.ProjectDnsAutoRecordConfig{}, notFoundErr),
+			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsARCID).Return(nsxModel.DnsAutoRecordConfig{}, notFoundErr),
 			mockSDK.EXPECT().Patch(gomock.Any(), gomock.Any(), dnsARCID, gomock.Any()).Return(nil),
 			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsARCID).Return(dnsARCAPIResponse(), nil),
 		)
@@ -133,7 +133,7 @@ func TestMockResourceNsxtPolicyDnsRecordAutoConfigRead(t *testing.T) {
 		mockSDK, restore := setupDnsARCMock(t, ctrl)
 		defer restore()
 
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsARCID).Return(nsxModel.ProjectDnsAutoRecordConfig{}, vapiErrors.NotFound{})
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsARCID).Return(nsxModel.DnsAutoRecordConfig{}, vapiErrors.NotFound{})
 
 		res := resourceNsxtPolicyDnsRecordAutoConfig()
 		d := schema.TestResourceDataRaw(t, res.Schema, minimalDnsARCData())

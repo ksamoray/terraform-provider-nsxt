@@ -11,9 +11,9 @@ import (
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
 )
 
-type ProjectDnsAutoRecordConfigClientContext utl.ClientContext
+type DnsAutoRecordConfigClientContext utl.ClientContext
 
-func NewDnsAutoRecordConfigsClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *ProjectDnsAutoRecordConfigClientContext {
+func NewDnsAutoRecordConfigsClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *DnsAutoRecordConfigClientContext {
 	var client interface{}
 
 	switch sessionContext.ClientType {
@@ -24,10 +24,10 @@ func NewDnsAutoRecordConfigsClient(sessionContext utl.SessionContext, connector 
 	default:
 		return nil
 	}
-	return &ProjectDnsAutoRecordConfigClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
+	return &DnsAutoRecordConfigClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
 }
 
-func (c ProjectDnsAutoRecordConfigClientContext) Delete(orgIdParam string, projectIdParam string, configIdParam string) error {
+func (c DnsAutoRecordConfigClientContext) Delete(orgIdParam string, projectIdParam string, configIdParam string) error {
 	var err error
 
 	switch c.ClientType {
@@ -42,8 +42,8 @@ func (c ProjectDnsAutoRecordConfigClientContext) Delete(orgIdParam string, proje
 	return err
 }
 
-func (c ProjectDnsAutoRecordConfigClientContext) Get(orgIdParam string, projectIdParam string, configIdParam string) (model0.ProjectDnsAutoRecordConfig, error) {
-	var obj model0.ProjectDnsAutoRecordConfig
+func (c DnsAutoRecordConfigClientContext) Get(orgIdParam string, projectIdParam string, configIdParam string) (model0.DnsAutoRecordConfig, error) {
+	var obj model0.DnsAutoRecordConfig
 	var err error
 
 	switch c.ClientType {
@@ -61,7 +61,7 @@ func (c ProjectDnsAutoRecordConfigClientContext) Get(orgIdParam string, projectI
 	return obj, err
 }
 
-func (c ProjectDnsAutoRecordConfigClientContext) Patch(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model0.ProjectDnsAutoRecordConfig) error {
+func (c DnsAutoRecordConfigClientContext) Patch(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model0.DnsAutoRecordConfig) error {
 	var err error
 
 	switch c.ClientType {
@@ -76,9 +76,9 @@ func (c ProjectDnsAutoRecordConfigClientContext) Patch(orgIdParam string, projec
 	return err
 }
 
-func (c ProjectDnsAutoRecordConfigClientContext) Update(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model0.ProjectDnsAutoRecordConfig) (model0.ProjectDnsAutoRecordConfig, error) {
+func (c DnsAutoRecordConfigClientContext) Update(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model0.DnsAutoRecordConfig) (model0.DnsAutoRecordConfig, error) {
 	var err error
-	var obj model0.ProjectDnsAutoRecordConfig
+	var obj model0.DnsAutoRecordConfig
 
 	switch c.ClientType {
 

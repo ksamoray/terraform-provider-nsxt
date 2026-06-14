@@ -11,9 +11,9 @@ import (
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
 )
 
-type ProjectDnsRecordClientContext utl.ClientContext
+type DnsRecordClientContext utl.ClientContext
 
-func NewDnsRecordsClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *ProjectDnsRecordClientContext {
+func NewDnsRecordsClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *DnsRecordClientContext {
 	var client interface{}
 
 	switch sessionContext.ClientType {
@@ -24,10 +24,10 @@ func NewDnsRecordsClient(sessionContext utl.SessionContext, connector vapiProtoc
 	default:
 		return nil
 	}
-	return &ProjectDnsRecordClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
+	return &DnsRecordClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
 }
 
-func (c ProjectDnsRecordClientContext) Delete(orgIdParam string, projectIdParam string, dnsRecordIdParam string) error {
+func (c DnsRecordClientContext) Delete(orgIdParam string, projectIdParam string, dnsRecordIdParam string) error {
 	var err error
 
 	switch c.ClientType {
@@ -42,8 +42,8 @@ func (c ProjectDnsRecordClientContext) Delete(orgIdParam string, projectIdParam 
 	return err
 }
 
-func (c ProjectDnsRecordClientContext) Get(orgIdParam string, projectIdParam string, dnsRecordIdParam string) (model0.ProjectDnsRecord, error) {
-	var obj model0.ProjectDnsRecord
+func (c DnsRecordClientContext) Get(orgIdParam string, projectIdParam string, dnsRecordIdParam string) (model0.DnsRecord, error) {
+	var obj model0.DnsRecord
 	var err error
 
 	switch c.ClientType {
@@ -61,7 +61,7 @@ func (c ProjectDnsRecordClientContext) Get(orgIdParam string, projectIdParam str
 	return obj, err
 }
 
-func (c ProjectDnsRecordClientContext) Patch(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model0.ProjectDnsRecord) error {
+func (c DnsRecordClientContext) Patch(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model0.DnsRecord) error {
 	var err error
 
 	switch c.ClientType {
@@ -76,9 +76,9 @@ func (c ProjectDnsRecordClientContext) Patch(orgIdParam string, projectIdParam s
 	return err
 }
 
-func (c ProjectDnsRecordClientContext) Update(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model0.ProjectDnsRecord) (model0.ProjectDnsRecord, error) {
+func (c DnsRecordClientContext) Update(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model0.DnsRecord) (model0.DnsRecord, error) {
 	var err error
-	var obj model0.ProjectDnsRecord
+	var obj model0.DnsRecord
 
 	switch c.ClientType {
 

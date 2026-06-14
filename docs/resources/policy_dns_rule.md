@@ -8,7 +8,7 @@ description: A resource to configure a Policy DNS Rule.
 
 This resource provides a method for the management of DNS rules attached to a Policy DNS Service.
 
-A DNS rule defines an action applied to DNS queries whose domain matches the rule's `domain_patterns` using longest-prefix match. Supported actions are `UPDATE_MEMBERSHIP` (dynamically populate an FQDN Group with resolved IPs) and `FORWARD` (proxy to upstream DNS servers).
+A DNS rule defines an action applied to DNS queries whose domain matches the rule's `domain_patterns` using longest-prefix match. Supported actions are `UPDATE_MEMBERSHIP` (dynamically populate an FQDN Group with resolved IPs) and `FORWARD` (proxy to upstream DNS servers or to a shared DNS zone).
 
 This resource is applicable to NSX Policy Manager and requires NSX 9.2.0 or higher.
 
@@ -29,6 +29,13 @@ resource "nsxt_policy_dns_rule" "forward_rule" {
   }
 }
 
+resource "nsxt_policy_dns_rule" "shared_zone_rule" {
+  parent_path      = nsxt_policy_dns_service.svc.path
+  display_name     = "shared-zone-rule"
+  action_type      = "FORWARD"
+  shared_zone_path = nsxt_policy_dns_zone.shared.path
+}
+
 resource "nsxt_policy_dns_rule" "membership_rule" {
   parent_path     = nsxt_policy_dns_service.svc.path
   display_name    = "membership-rule"
@@ -47,8 +54,9 @@ The following arguments are supported:
 * `nsx_id` - (Optional) The NSX ID of this resource. If set, this ID will be used to create the resource.
 * `parent_path` - (Required, Force New) Policy path of the parent `nsxt_policy_dns_service`.
 * `action_type` - (Required) Action to apply to DNS queries matching `domain_patterns`. One of `FORWARD` or `UPDATE_MEMBERSHIP`.
-* `domain_patterns` - (Required) Domain name patterns matched via longest-prefix match. Supports wildcards (e.g. `*.example.com`). At least one pattern is required.
-* `upstream_servers` - (Optional) Upstream DNS server IP addresses to forward matching queries to. Required and must be non-empty when `action_type` is `FORWARD`. Maximum 3 entries.
+* `domain_patterns` - (Optional) Domain name patterns matched via longest-prefix match. Supports wildcards (e.g. `*.example.com`). Required unless `action_type` is `FORWARD` and `shared_zone_path` is set (in which case domain patterns are derived from the shared zone).
+* `upstream_servers` - (Optional) Upstream DNS server IP addresses to forward matching queries to. Only valid when `action_type` is `FORWARD`. Mutually exclusive with `shared_zone_path`. Maximum 3 entries.
+* `shared_zone_path` - (Optional) Policy path to a `DnsZone` shared with this project. Only valid when `action_type` is `FORWARD`. Mutually exclusive with `upstream_servers`. When set, `domain_patterns` may be omitted.
 
 ## Attributes Reference
 

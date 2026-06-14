@@ -49,10 +49,10 @@ func (mr *MockDnsAutoRecordConfigsClientMockRecorder) Delete(orgIdParam, project
 }
 
 // Get mocks base method.
-func (m *MockDnsAutoRecordConfigsClient) Get(orgIdParam string, projectIdParam string, configIdParam string) (model.ProjectDnsAutoRecordConfig, error) {
+func (m *MockDnsAutoRecordConfigsClient) Get(orgIdParam string, projectIdParam string, configIdParam string) (model.DnsAutoRecordConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", orgIdParam, projectIdParam, configIdParam)
-	ret0, _ := ret[0].(model.ProjectDnsAutoRecordConfig)
+	ret0, _ := ret[0].(model.DnsAutoRecordConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockDnsAutoRecordConfigsClientMockRecorder) Get(orgIdParam, projectIdP
 }
 
 // List mocks base method.
-func (m *MockDnsAutoRecordConfigsClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.ProjectDnsAutoRecordConfigListResult, error) {
+func (m *MockDnsAutoRecordConfigsClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.DnsAutoRecordConfigListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", orgIdParam, projectIdParam, cursorParam, includeMarkForDeleteObjectsParam, includedFieldsParam, pageSizeParam, sortAscendingParam, sortByParam)
-	ret0, _ := ret[0].(model.ProjectDnsAutoRecordConfigListResult)
+	ret0, _ := ret[0].(model.DnsAutoRecordConfigListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockDnsAutoRecordConfigsClientMockRecorder) List(orgIdParam, projectId
 }
 
 // Patch mocks base method.
-func (m *MockDnsAutoRecordConfigsClient) Patch(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model.ProjectDnsAutoRecordConfig) error {
+func (m *MockDnsAutoRecordConfigsClient) Patch(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model.DnsAutoRecordConfig) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", orgIdParam, projectIdParam, configIdParam, projectDnsAutoRecordConfigParam)
 	ret0, _ := ret[0].(error)
@@ -93,10 +93,10 @@ func (mr *MockDnsAutoRecordConfigsClientMockRecorder) Patch(orgIdParam, projectI
 }
 
 // Update mocks base method.
-func (m *MockDnsAutoRecordConfigsClient) Update(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model.ProjectDnsAutoRecordConfig) (model.ProjectDnsAutoRecordConfig, error) {
+func (m *MockDnsAutoRecordConfigsClient) Update(orgIdParam string, projectIdParam string, configIdParam string, projectDnsAutoRecordConfigParam model.DnsAutoRecordConfig) (model.DnsAutoRecordConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", orgIdParam, projectIdParam, configIdParam, projectDnsAutoRecordConfigParam)
-	ret0, _ := ret[0].(model.ProjectDnsAutoRecordConfig)
+	ret0, _ := ret[0].(model.DnsAutoRecordConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

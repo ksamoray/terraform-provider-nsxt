@@ -30,13 +30,13 @@ var (
 	dnsRecordRevision    = int64(1)
 )
 
-func dnsRecordAPIResponse() nsxModel.ProjectDnsRecord {
+func dnsRecordAPIResponse() nsxModel.DnsRecord {
 	recordName := "www"
-	recordType := nsxModel.ProjectDnsRecord_RECORD_TYPE_A
+	recordType := nsxModel.DnsRecord_RECORD_TYPE_A
 	zonePath := "/orgs/default/projects/p1/dns-services/svc1/zones/zone1"
 	ttl := int64(300)
 	fqdn := "www.example.com."
-	return nsxModel.ProjectDnsRecord{
+	return nsxModel.DnsRecord{
 		Id:           &dnsRecordID,
 		DisplayName:  &dnsRecordDisplayName,
 		Description:  &dnsRecordDescription,
@@ -65,14 +65,14 @@ func minimalDnsRecordData() map[string]interface{} {
 
 func setupDnsRecordMock(t *testing.T, ctrl *gomock.Controller) (*projectmocks.MockDnsRecordsClient, func()) {
 	mockSDK := projectmocks.NewMockDnsRecordsClient(ctrl)
-	mockWrapper := &apiprojects.ProjectDnsRecordClientContext{
+	mockWrapper := &apiprojects.DnsRecordClientContext{
 		Client:     mockSDK,
 		ClientType: utl.Multitenancy,
 		ProjectID:  "project1",
 	}
 
 	original := cliProjectDnsRecordsClient
-	cliProjectDnsRecordsClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.ProjectDnsRecordClientContext {
+	cliProjectDnsRecordsClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.DnsRecordClientContext {
 		return mockWrapper
 	}
 	return mockSDK, func() { cliProjectDnsRecordsClient = original }
@@ -90,7 +90,7 @@ func TestMockResourceNsxtPolicyDnsRecordCreate(t *testing.T) {
 
 		notFoundErr := vapiErrors.NotFound{}
 		gomock.InOrder(
-			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsRecordID).Return(nsxModel.ProjectDnsRecord{}, notFoundErr),
+			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsRecordID).Return(nsxModel.DnsRecord{}, notFoundErr),
 			mockSDK.EXPECT().Patch(gomock.Any(), gomock.Any(), dnsRecordID, gomock.Any()).Return(nil),
 			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsRecordID).Return(dnsRecordAPIResponse(), nil),
 		)
@@ -141,7 +141,7 @@ func TestMockResourceNsxtPolicyDnsRecordRead(t *testing.T) {
 		mockSDK, restore := setupDnsRecordMock(t, ctrl)
 		defer restore()
 
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsRecordID).Return(nsxModel.ProjectDnsRecord{}, vapiErrors.NotFound{})
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsRecordID).Return(nsxModel.DnsRecord{}, vapiErrors.NotFound{})
 
 		res := resourceNsxtPolicyDnsRecord()
 		d := schema.TestResourceDataRaw(t, res.Schema, minimalDnsRecordData())

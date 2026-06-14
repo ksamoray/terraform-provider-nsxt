@@ -49,10 +49,10 @@ func (mr *MockDnsRecordsClientMockRecorder) Delete(orgIdParam, projectIdParam, d
 }
 
 // Get mocks base method.
-func (m *MockDnsRecordsClient) Get(orgIdParam string, projectIdParam string, dnsRecordIdParam string) (model.ProjectDnsRecord, error) {
+func (m *MockDnsRecordsClient) Get(orgIdParam string, projectIdParam string, dnsRecordIdParam string) (model.DnsRecord, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", orgIdParam, projectIdParam, dnsRecordIdParam)
-	ret0, _ := ret[0].(model.ProjectDnsRecord)
+	ret0, _ := ret[0].(model.DnsRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockDnsRecordsClientMockRecorder) Get(orgIdParam, projectIdParam, dnsR
 }
 
 // List mocks base method.
-func (m *MockDnsRecordsClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string, zonePathParam *string) (model.ProjectDnsRecordListResult, error) {
+func (m *MockDnsRecordsClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string, zonePathParam *string) (model.DnsRecordListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", orgIdParam, projectIdParam, cursorParam, includeMarkForDeleteObjectsParam, includedFieldsParam, pageSizeParam, sortAscendingParam, sortByParam, zonePathParam)
-	ret0, _ := ret[0].(model.ProjectDnsRecordListResult)
+	ret0, _ := ret[0].(model.DnsRecordListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockDnsRecordsClientMockRecorder) List(orgIdParam, projectIdParam, cur
 }
 
 // Patch mocks base method.
-func (m *MockDnsRecordsClient) Patch(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model.ProjectDnsRecord) error {
+func (m *MockDnsRecordsClient) Patch(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model.DnsRecord) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", orgIdParam, projectIdParam, dnsRecordIdParam, projectDnsRecordParam)
 	ret0, _ := ret[0].(error)
@@ -93,10 +93,10 @@ func (mr *MockDnsRecordsClientMockRecorder) Patch(orgIdParam, projectIdParam, dn
 }
 
 // Update mocks base method.
-func (m *MockDnsRecordsClient) Update(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model.ProjectDnsRecord) (model.ProjectDnsRecord, error) {
+func (m *MockDnsRecordsClient) Update(orgIdParam string, projectIdParam string, dnsRecordIdParam string, projectDnsRecordParam model.DnsRecord) (model.DnsRecord, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", orgIdParam, projectIdParam, dnsRecordIdParam, projectDnsRecordParam)
-	ret0, _ := ret[0].(model.ProjectDnsRecord)
+	ret0, _ := ret[0].(model.DnsRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

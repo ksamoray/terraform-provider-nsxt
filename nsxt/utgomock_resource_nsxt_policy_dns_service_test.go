@@ -30,11 +30,11 @@ var (
 	dnsSvcRevision    = int64(1)
 )
 
-func dnsSvcAPIResponse() nsxModel.PolicyDnsService {
+func dnsSvcAPIResponse() nsxModel.DnsService {
 	listenerIP := "/orgs/default/projects/p1/ip-address-allocations/ip1"
 	vnsCluster := "/infra/sites/default/vns-clusters/cluster1"
 	tgw := "/orgs/default/projects/p1/transit-gateways/tgw1"
-	return nsxModel.PolicyDnsService{
+	return nsxModel.DnsService{
 		Id:                   &dnsSvcID,
 		DisplayName:          &dnsSvcDisplayName,
 		Description:          &dnsSvcDescription,
@@ -58,14 +58,14 @@ func minimalDnsSvcData() map[string]interface{} {
 
 func setupDnsSvcMock(t *testing.T, ctrl *gomock.Controller) (*projectmocks.MockDnsServicesClient, func()) {
 	mockSDK := projectmocks.NewMockDnsServicesClient(ctrl)
-	mockWrapper := &apiprojects.PolicyDnsServiceClientContext{
+	mockWrapper := &apiprojects.DnsServiceClientContext{
 		Client:     mockSDK,
 		ClientType: utl.Multitenancy,
 		ProjectID:  "project1",
 	}
 
 	original := cliPolicyDnsServicesClient
-	cliPolicyDnsServicesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.PolicyDnsServiceClientContext {
+	cliPolicyDnsServicesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *apiprojects.DnsServiceClientContext {
 		return mockWrapper
 	}
 	return mockSDK, func() { cliPolicyDnsServicesClient = original }
@@ -83,7 +83,7 @@ func TestMockResourceNsxtPolicyDnsServiceCreate(t *testing.T) {
 
 		notFoundErr := vapiErrors.NotFound{}
 		gomock.InOrder(
-			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsSvcID).Return(nsxModel.PolicyDnsService{}, notFoundErr),
+			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsSvcID).Return(nsxModel.DnsService{}, notFoundErr),
 			mockSDK.EXPECT().Patch(gomock.Any(), gomock.Any(), dnsSvcID, gomock.Any()).Return(nil),
 			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsSvcID).Return(dnsSvcAPIResponse(), nil),
 		)
@@ -133,7 +133,7 @@ func TestMockResourceNsxtPolicyDnsServiceRead(t *testing.T) {
 		mockSDK, restore := setupDnsSvcMock(t, ctrl)
 		defer restore()
 
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsSvcID).Return(nsxModel.PolicyDnsService{}, vapiErrors.NotFound{})
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), dnsSvcID).Return(nsxModel.DnsService{}, vapiErrors.NotFound{})
 
 		res := resourceNsxtPolicyDnsService()
 		d := schema.TestResourceDataRaw(t, res.Schema, minimalDnsSvcData())

@@ -18,13 +18,13 @@ import (
 	"github.com/vmware/terraform-provider-nsxt/nsxt/util"
 )
 
-var cliProjectDnsRulesClient = dnssvcs.NewRulesClient
+var cliDnsRulesClient = dnssvcs.NewRulesClient
 
 var policyDnsRulePathExample = "/orgs/[org]/projects/[project]/dns-services/[dns-service]"
 
 var dnsRuleActionTypeValues = []string{
-	model.ProjectDnsRule_ACTION_TYPE_UPDATE_MEMBERSHIP,
-	model.ProjectDnsRule_ACTION_TYPE_FORWARD,
+	model.DnsRule_ACTION_TYPE_UPDATE_MEMBERSHIP,
+	model.DnsRule_ACTION_TYPE_FORWARD,
 }
 
 func resourceNsxtPolicyDnsRule() *schema.Resource {
@@ -43,7 +43,7 @@ func resourceNsxtPolicyDnsRule() *schema.Resource {
 			"description":  getDescriptionSchema(),
 			"revision":     getRevisionSchema(),
 			"tag":          getTagsSchema(),
-			"parent_path":  getPolicyPathSchema(true, true, "Policy path of the parent PolicyDnsService"),
+			"parent_path":  getPolicyPathSchema(true, true, "Policy path of the parent DnsService"),
 			"action_type": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -52,12 +52,11 @@ func resourceNsxtPolicyDnsRule() *schema.Resource {
 			},
 			"domain_patterns": {
 				Type:     schema.TypeList,
-				Required: true,
-				MinItems: 1,
+				Optional: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Domain name patterns matched via longest-prefix match. Supports wildcards (e.g. '*.example.com').",
+				Description: "Domain name patterns matched via longest-prefix match. Supports wildcards (e.g. '*.example.com'). Required unless action_type is FORWARD and shared_zone_path is set.",
 			},
 			"upstream_servers": {
 				Type:     schema.TypeList,
@@ -66,7 +65,13 @@ func resourceNsxtPolicyDnsRule() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "Upstream DNS server IPs for FORWARD rules. Required when action_type is FORWARD.",
+				Description: "Upstream DNS server IPs for FORWARD rules. Mutually exclusive with shared_zone_path.",
+			},
+			"shared_zone_path": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validatePolicyPath(),
+				Description:  "Policy path to a DnsZone shared with this project. Only valid for FORWARD rules. Mutually exclusive with upstream_servers.",
 			},
 		},
 	}
@@ -77,7 +82,7 @@ func resourceNsxtPolicyDnsRuleExists(sessionContext utl.SessionContext, parentPa
 	if pathErr != nil {
 		return false, pathErr
 	}
-	c := cliProjectDnsRulesClient(sessionContext, connector)
+	c := cliDnsRulesClient(sessionContext, connector)
 	if c == nil {
 		return false, fmt.Errorf("unsupported client type for DNS rule")
 	}
@@ -91,7 +96,7 @@ func resourceNsxtPolicyDnsRuleExists(sessionContext utl.SessionContext, parentPa
 	return false, logAPIError("Error retrieving resource", err)
 }
 
-func policyDnsRuleFromSchema(d *schema.ResourceData) model.ProjectDnsRule {
+func policyDnsRuleFromSchema(d *schema.ResourceData) model.DnsRule {
 	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	tags := getPolicyTagsFromSchema(d)
@@ -99,7 +104,7 @@ func policyDnsRuleFromSchema(d *schema.ResourceData) model.ProjectDnsRule {
 	domainPatterns := getStringListFromSchemaList(d, "domain_patterns")
 	upstreamServers := getStringListFromSchemaList(d, "upstream_servers")
 
-	return model.ProjectDnsRule{
+	obj := model.DnsRule{
 		DisplayName:     &displayName,
 		Description:     &description,
 		Tags:            tags,
@@ -107,6 +112,13 @@ func policyDnsRuleFromSchema(d *schema.ResourceData) model.ProjectDnsRule {
 		DomainPatterns:  domainPatterns,
 		UpstreamServers: upstreamServers,
 	}
+
+	if v, ok := d.GetOk("shared_zone_path"); ok {
+		szp := v.(string)
+		obj.SharedZonePath = &szp
+	}
+
+	return obj
 }
 
 func dnsRuleParentsFromPath(parentPath string) (org, project, dnsServiceID string, err error) {
@@ -136,18 +148,22 @@ func resourceNsxtPolicyDnsRuleCreate(d *schema.ResourceData, m interface{}) erro
 	}
 
 	obj := policyDnsRuleFromSchema(d)
-	if *obj.ActionType == model.ProjectDnsRule_ACTION_TYPE_FORWARD && len(obj.UpstreamServers) == 0 {
-		return fmt.Errorf("upstream_servers is required when action_type is FORWARD")
+	if *obj.ActionType == model.DnsRule_ACTION_TYPE_FORWARD {
+		hasUpstream := len(obj.UpstreamServers) > 0
+		hasSharedZone := obj.SharedZonePath != nil && *obj.SharedZonePath != ""
+		if hasUpstream == hasSharedZone {
+			return fmt.Errorf("exactly one of upstream_servers or shared_zone_path must be set for FORWARD rules")
+		}
 	}
 
-	log.Printf("[INFO] Creating ProjectDnsRule with ID %s under %s", id, parentPath)
-	c := cliProjectDnsRulesClient(sessionContext, connector)
+	log.Printf("[INFO] Creating DnsRule with ID %s under %s", id, parentPath)
+	c := cliDnsRulesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS rule")
 	}
 	err = c.Patch(org, project, dnsServiceID, id, obj)
 	if err != nil {
-		return handleCreateError("ProjectDnsRule", id, err)
+		return handleCreateError("DnsRule", id, err)
 	}
 	d.SetId(id)
 	d.Set("nsx_id", id)
@@ -159,7 +175,7 @@ func resourceNsxtPolicyDnsRuleRead(d *schema.ResourceData, m interface{}) error 
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRule ID")
+		return fmt.Errorf("error obtaining DnsRule ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -169,13 +185,13 @@ func resourceNsxtPolicyDnsRuleRead(d *schema.ResourceData, m interface{}) error 
 		return pathErr
 	}
 
-	c := cliProjectDnsRulesClient(sessionContext, connector)
+	c := cliDnsRulesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS rule")
 	}
 	obj, err := c.Get(org, project, dnsServiceID, id)
 	if err != nil {
-		return handleReadError(d, "ProjectDnsRule", id, err)
+		return handleReadError(d, "DnsRule", id, err)
 	}
 
 	setPolicyTagsInSchema(d, obj.Tags)
@@ -187,6 +203,7 @@ func resourceNsxtPolicyDnsRuleRead(d *schema.ResourceData, m interface{}) error 
 	d.Set("action_type", obj.ActionType)
 	d.Set("domain_patterns", obj.DomainPatterns)
 	d.Set("upstream_servers", obj.UpstreamServers)
+	d.Set("shared_zone_path", obj.SharedZonePath)
 	return nil
 }
 
@@ -195,7 +212,7 @@ func resourceNsxtPolicyDnsRuleUpdate(d *schema.ResourceData, m interface{}) erro
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRule ID")
+		return fmt.Errorf("error obtaining DnsRule ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -209,18 +226,22 @@ func resourceNsxtPolicyDnsRuleUpdate(d *schema.ResourceData, m interface{}) erro
 	obj := policyDnsRuleFromSchema(d)
 	obj.Revision = &revision
 
-	if *obj.ActionType == model.ProjectDnsRule_ACTION_TYPE_FORWARD && len(obj.UpstreamServers) == 0 {
-		return fmt.Errorf("upstream_servers is required when action_type is FORWARD")
+	if *obj.ActionType == model.DnsRule_ACTION_TYPE_FORWARD {
+		hasUpstream := len(obj.UpstreamServers) > 0
+		hasSharedZone := obj.SharedZonePath != nil && *obj.SharedZonePath != ""
+		if hasUpstream == hasSharedZone {
+			return fmt.Errorf("exactly one of upstream_servers or shared_zone_path must be set for FORWARD rules")
+		}
 	}
 
-	c := cliProjectDnsRulesClient(sessionContext, connector)
+	c := cliDnsRulesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS rule")
 	}
 	_, err := c.Update(org, project, dnsServiceID, id, obj)
 	if err != nil {
 		d.Partial(true)
-		return handleUpdateError("ProjectDnsRule", id, err)
+		return handleUpdateError("DnsRule", id, err)
 	}
 	return resourceNsxtPolicyDnsRuleRead(d, m)
 }
@@ -230,7 +251,7 @@ func resourceNsxtPolicyDnsRuleDelete(d *schema.ResourceData, m interface{}) erro
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsRule ID")
+		return fmt.Errorf("error obtaining DnsRule ID")
 	}
 
 	parentPath := d.Get("parent_path").(string)
@@ -240,13 +261,13 @@ func resourceNsxtPolicyDnsRuleDelete(d *schema.ResourceData, m interface{}) erro
 		return pathErr
 	}
 
-	c := cliProjectDnsRulesClient(sessionContext, connector)
+	c := cliDnsRulesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS rule")
 	}
 	err := c.Delete(org, project, dnsServiceID, id)
 	if err != nil {
-		return handleDeleteError("ProjectDnsRule", id, err)
+		return handleDeleteError("DnsRule", id, err)
 	}
 	return nil
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/vmware/terraform-provider-nsxt/nsxt/util"
 )
 
-var cliProjectDnsAutoRecordConfigsClient = projects.NewDnsAutoRecordConfigsClient
+var cliDnsAutoRecordConfigsClient = projects.NewDnsAutoRecordConfigsClient
 
 var policyDnsAutoRecordConfigPathExample = "/orgs/[org]/projects/[project]/dns-auto-record-configs/[config]"
 
@@ -45,11 +45,17 @@ func resourceNsxtPolicyDnsRecordAutoConfig() *schema.Resource {
 				ValidateFunc: validatePolicyPath(),
 				Description:  "Policy path to the IP block from which workload IPs are allocated. Immutable after creation.",
 			},
-			"zone_path": {
+			"a_record_zone_path": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validatePolicyPath(),
-				Description:  "Policy path to a locally-owned ProjectDnsZone where auto-created A records are placed.",
+				Description:  "Policy path to a DnsZone (local or shared) in which auto-created A records are placed.",
+			},
+			"ptr_record_zone_path": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validatePolicyPath(),
+				Description:  "Optional policy path to a DnsZone for auto-created PTR (reverse DNS) records. When absent, no PTR record is auto-created.",
 			},
 			"ttl": {
 				Type:        schema.TypeInt,
@@ -63,7 +69,7 @@ func resourceNsxtPolicyDnsRecordAutoConfig() *schema.Resource {
 
 func resourceNsxtPolicyDnsRecordAutoConfigExists(sessionContext utl.SessionContext, id string, connector client.Connector) (bool, error) {
 	parents := getVpcParentsFromContext(sessionContext)
-	c := cliProjectDnsAutoRecordConfigsClient(sessionContext, connector)
+	c := cliDnsAutoRecordConfigsClient(sessionContext, connector)
 	if c == nil {
 		return false, fmt.Errorf("unsupported client type for DNS auto record config")
 	}
@@ -77,22 +83,29 @@ func resourceNsxtPolicyDnsRecordAutoConfigExists(sessionContext utl.SessionConte
 	return false, logAPIError("Error retrieving resource", err)
 }
 
-func policyDnsRecordAutoConfigFromSchema(d *schema.ResourceData) model.ProjectDnsAutoRecordConfig {
+func policyDnsRecordAutoConfigFromSchema(d *schema.ResourceData) model.DnsAutoRecordConfig {
 	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	tags := getPolicyTagsFromSchema(d)
 	ipBlockPath := d.Get("ip_block_path").(string)
-	zonePath := d.Get("zone_path").(string)
+	aRecordZonePath := d.Get("a_record_zone_path").(string)
 	ttl := int64(d.Get("ttl").(int))
 
-	return model.ProjectDnsAutoRecordConfig{
-		DisplayName: &displayName,
-		Description: &description,
-		Tags:        tags,
-		IpBlockPath: &ipBlockPath,
-		ZonePath:    &zonePath,
-		Ttl:         &ttl,
+	obj := model.DnsAutoRecordConfig{
+		DisplayName:     &displayName,
+		Description:     &description,
+		Tags:            tags,
+		IpBlockPath:     &ipBlockPath,
+		ARecordZonePath: &aRecordZonePath,
+		Ttl:             &ttl,
 	}
+
+	if v, ok := d.GetOk("ptr_record_zone_path"); ok {
+		ptrPath := v.(string)
+		obj.PtrRecordZonePath = &ptrPath
+	}
+
+	return obj
 }
 
 func resourceNsxtPolicyDnsRecordAutoConfigCreate(d *schema.ResourceData, m interface{}) error {
@@ -110,14 +123,14 @@ func resourceNsxtPolicyDnsRecordAutoConfigCreate(d *schema.ResourceData, m inter
 	parents := getVpcParentsFromContext(sessionContext)
 	obj := policyDnsRecordAutoConfigFromSchema(d)
 
-	log.Printf("[INFO] Creating ProjectDnsAutoRecordConfig with ID %s", id)
-	c := cliProjectDnsAutoRecordConfigsClient(sessionContext, connector)
+	log.Printf("[INFO] Creating DnsAutoRecordConfig with ID %s", id)
+	c := cliDnsAutoRecordConfigsClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS auto record config")
 	}
 	err = c.Patch(parents[0], parents[1], id, obj)
 	if err != nil {
-		return handleCreateError("ProjectDnsAutoRecordConfig", id, err)
+		return handleCreateError("DnsAutoRecordConfig", id, err)
 	}
 	d.SetId(id)
 	d.Set("nsx_id", id)
@@ -130,17 +143,17 @@ func resourceNsxtPolicyDnsRecordAutoConfigRead(d *schema.ResourceData, m interfa
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsAutoRecordConfig ID")
+		return fmt.Errorf("error obtaining DnsAutoRecordConfig ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
-	c := cliProjectDnsAutoRecordConfigsClient(sessionContext, connector)
+	c := cliDnsAutoRecordConfigsClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS auto record config")
 	}
 	obj, err := c.Get(parents[0], parents[1], id)
 	if err != nil {
-		return handleReadError(d, "ProjectDnsAutoRecordConfig", id, err)
+		return handleReadError(d, "DnsAutoRecordConfig", id, err)
 	}
 
 	setPolicyTagsInSchema(d, obj.Tags)
@@ -150,7 +163,8 @@ func resourceNsxtPolicyDnsRecordAutoConfigRead(d *schema.ResourceData, m interfa
 	d.Set("path", obj.Path)
 	d.Set("nsx_id", obj.Id)
 	d.Set("ip_block_path", obj.IpBlockPath)
-	d.Set("zone_path", obj.ZonePath)
+	d.Set("a_record_zone_path", obj.ARecordZonePath)
+	d.Set("ptr_record_zone_path", obj.PtrRecordZonePath)
 	if obj.Ttl != nil {
 		d.Set("ttl", int(*obj.Ttl))
 	}
@@ -163,7 +177,7 @@ func resourceNsxtPolicyDnsRecordAutoConfigUpdate(d *schema.ResourceData, m inter
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsAutoRecordConfig ID")
+		return fmt.Errorf("error obtaining DnsAutoRecordConfig ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -171,14 +185,14 @@ func resourceNsxtPolicyDnsRecordAutoConfigUpdate(d *schema.ResourceData, m inter
 	obj := policyDnsRecordAutoConfigFromSchema(d)
 	obj.Revision = &revision
 
-	c := cliProjectDnsAutoRecordConfigsClient(sessionContext, connector)
+	c := cliDnsAutoRecordConfigsClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS auto record config")
 	}
 	_, err := c.Update(parents[0], parents[1], id, obj)
 	if err != nil {
 		d.Partial(true)
-		return handleUpdateError("ProjectDnsAutoRecordConfig", id, err)
+		return handleUpdateError("DnsAutoRecordConfig", id, err)
 	}
 	return resourceNsxtPolicyDnsRecordAutoConfigRead(d, m)
 }
@@ -189,17 +203,17 @@ func resourceNsxtPolicyDnsRecordAutoConfigDelete(d *schema.ResourceData, m inter
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining ProjectDnsAutoRecordConfig ID")
+		return fmt.Errorf("error obtaining DnsAutoRecordConfig ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
-	c := cliProjectDnsAutoRecordConfigsClient(sessionContext, connector)
+	c := cliDnsAutoRecordConfigsClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS auto record config")
 	}
 	err := c.Delete(parents[0], parents[1], id)
 	if err != nil {
-		return handleDeleteError("ProjectDnsAutoRecordConfig", id, err)
+		return handleDeleteError("DnsAutoRecordConfig", id, err)
 	}
 	return nil
 }

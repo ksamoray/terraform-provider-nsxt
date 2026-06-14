@@ -49,10 +49,10 @@ func (mr *MockRulesClientMockRecorder) Delete(orgIdParam, projectIdParam, dnsSer
 }
 
 // Get mocks base method.
-func (m *MockRulesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) (model.ProjectDnsRule, error) {
+func (m *MockRulesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) (model.DnsRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", orgIdParam, projectIdParam, dnsServiceIdParam, ruleIdParam)
-	ret0, _ := ret[0].(model.ProjectDnsRule)
+	ret0, _ := ret[0].(model.DnsRule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockRulesClientMockRecorder) Get(orgIdParam, projectIdParam, dnsServic
 }
 
 // List mocks base method.
-func (m *MockRulesClient) List(orgIdParam string, projectIdParam string, dnsServiceIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.ProjectDnsRuleListResult, error) {
+func (m *MockRulesClient) List(orgIdParam string, projectIdParam string, dnsServiceIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.DnsRuleListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", orgIdParam, projectIdParam, dnsServiceIdParam, cursorParam, includeMarkForDeleteObjectsParam, includedFieldsParam, pageSizeParam, sortAscendingParam, sortByParam)
-	ret0, _ := ret[0].(model.ProjectDnsRuleListResult)
+	ret0, _ := ret[0].(model.DnsRuleListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockRulesClientMockRecorder) List(orgIdParam, projectIdParam, dnsServi
 }
 
 // Patch mocks base method.
-func (m *MockRulesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model.ProjectDnsRule) error {
+func (m *MockRulesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model.DnsRule) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", orgIdParam, projectIdParam, dnsServiceIdParam, ruleIdParam, projectDnsRuleParam)
 	ret0, _ := ret[0].(error)
@@ -93,10 +93,10 @@ func (mr *MockRulesClientMockRecorder) Patch(orgIdParam, projectIdParam, dnsServ
 }
 
 // Update mocks base method.
-func (m *MockRulesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model.ProjectDnsRule) (model.ProjectDnsRule, error) {
+func (m *MockRulesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model.DnsRule) (model.DnsRule, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", orgIdParam, projectIdParam, dnsServiceIdParam, ruleIdParam, projectDnsRuleParam)
-	ret0, _ := ret[0].(model.ProjectDnsRule)
+	ret0, _ := ret[0].(model.DnsRule)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

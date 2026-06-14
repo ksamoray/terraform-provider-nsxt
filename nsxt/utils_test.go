@@ -250,7 +250,7 @@ func testAccEnvDefined(t *testing.T, envVar string) {
 
 // testAccNsxtDnsVnaClusterTemplate returns HCL that looks up a pre-created
 // VPC_SERVICES VNA cluster (via NSXT_TEST_VNA_CLUSTER_NAME) and creates an
-// inline transit gateway required by PolicyDnsService.
+// inline transit gateway required by DnsService.
 // Exposed references:
 //   - data.nsxt_policy_virtual_network_appliance_cluster.vna.path
 //   - nsxt_policy_transit_gateway.dns_tgw.path

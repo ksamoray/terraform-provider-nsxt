@@ -11,9 +11,9 @@ import (
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
 )
 
-type ProjectDnsRuleClientContext utl.ClientContext
+type DnsRuleClientContext utl.ClientContext
 
-func NewRulesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *ProjectDnsRuleClientContext {
+func NewRulesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *DnsRuleClientContext {
 	var client interface{}
 
 	switch sessionContext.ClientType {
@@ -24,10 +24,10 @@ func NewRulesClient(sessionContext utl.SessionContext, connector vapiProtocolCli
 	default:
 		return nil
 	}
-	return &ProjectDnsRuleClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
+	return &DnsRuleClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
 }
 
-func (c ProjectDnsRuleClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) error {
+func (c DnsRuleClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) error {
 	var err error
 
 	switch c.ClientType {
@@ -42,8 +42,8 @@ func (c ProjectDnsRuleClientContext) Delete(orgIdParam string, projectIdParam st
 	return err
 }
 
-func (c ProjectDnsRuleClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) (model0.ProjectDnsRule, error) {
-	var obj model0.ProjectDnsRule
+func (c DnsRuleClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string) (model0.DnsRule, error) {
+	var obj model0.DnsRule
 	var err error
 
 	switch c.ClientType {
@@ -61,7 +61,7 @@ func (c ProjectDnsRuleClientContext) Get(orgIdParam string, projectIdParam strin
 	return obj, err
 }
 
-func (c ProjectDnsRuleClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model0.ProjectDnsRule) error {
+func (c DnsRuleClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model0.DnsRule) error {
 	var err error
 
 	switch c.ClientType {
@@ -76,9 +76,9 @@ func (c ProjectDnsRuleClientContext) Patch(orgIdParam string, projectIdParam str
 	return err
 }
 
-func (c ProjectDnsRuleClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model0.ProjectDnsRule) (model0.ProjectDnsRule, error) {
+func (c DnsRuleClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, ruleIdParam string, projectDnsRuleParam model0.DnsRule) (model0.DnsRule, error) {
 	var err error
-	var obj model0.ProjectDnsRule
+	var obj model0.DnsRule
 
 	switch c.ClientType {
 

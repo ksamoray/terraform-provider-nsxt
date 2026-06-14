@@ -47,7 +47,7 @@ func TestAccResourceNsxtPolicyDnsRecordAutoConfig_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(testResourceName, "description", accTestPolicyDnsRecordAutoConfigCreateAttributes["description"]),
 					resource.TestCheckResourceAttr(testResourceName, "ttl", accTestPolicyDnsRecordAutoConfigCreateAttributes["ttl"]),
 					resource.TestCheckResourceAttrSet(testResourceName, "ip_block_path"),
-					resource.TestCheckResourceAttrSet(testResourceName, "zone_path"),
+					resource.TestCheckResourceAttrSet(testResourceName, "a_record_zone_path"),
 					resource.TestCheckResourceAttrSet(testResourceName, "nsx_id"),
 					resource.TestCheckResourceAttrSet(testResourceName, "path"),
 					resource.TestCheckResourceAttrSet(testResourceName, "revision"),
@@ -173,7 +173,7 @@ resource "nsxt_policy_dns_record_auto_config" "test" {
   display_name  = "%s"
   description   = "%s"
   ip_block_path = nsxt_policy_ip_block.test.path
-  zone_path     = nsxt_policy_dns_zone.parent_zone.path
+  a_record_zone_path = nsxt_policy_dns_zone.parent_zone.path
   ttl           = %s
 
   tag {

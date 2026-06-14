@@ -83,6 +83,13 @@ func resourceNsxtPolicyDnsService() *schema.Resource {
 							},
 							Description: "Upstream DNS server IP addresses for catch-all recursive resolution.",
 						},
+						"shared_zone_forwarding_mode": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Default:      "AUTO",
+							ValidateFunc: validation.StringInSlice([]string{"AUTO", "MANUAL"}, false),
+							Description:  "Controls DNS forwarding rule management for shared zones. AUTO: system creates rules automatically. MANUAL: user must configure DnsRule resources explicitly.",
+						},
 					},
 				},
 				Description: "Forwarder and cache settings. When present, enables recursive resolution.",
@@ -107,14 +114,14 @@ func resourceNsxtPolicyDnsServiceExists(sessionContext utl.SessionContext, id st
 	return false, logAPIError("Error retrieving resource", err)
 }
 
-func policyDnsServiceFromSchema(d *schema.ResourceData) model.PolicyDnsService {
+func policyDnsServiceFromSchema(d *schema.ResourceData) model.DnsService {
 	displayName := d.Get("display_name").(string)
 	description := d.Get("description").(string)
 	tags := getPolicyTagsFromSchema(d)
 	listenerIPs := getStringListFromSchemaList(d, "allocated_listener_ips")
 	vnsClusters := getStringListFromSchemaList(d, "vns_clusters")
 
-	obj := model.PolicyDnsService{
+	obj := model.DnsService{
 		DisplayName:          &displayName,
 		Description:          &description,
 		Tags:                 tags,
@@ -128,7 +135,7 @@ func policyDnsServiceFromSchema(d *schema.ResourceData) model.PolicyDnsService {
 	fwdConfigs := d.Get("forwarder_config").([]interface{})
 	if len(fwdConfigs) > 0 {
 		fwdMap := fwdConfigs[0].(map[string]interface{})
-		fwdCfg := &model.PolicyDnsServiceForwarderConfig{}
+		fwdCfg := &model.DnsServiceForwarderConfig{}
 		if v, ok := fwdMap["cache_size"].(int); ok && v > 0 {
 			cacheSize := int64(v)
 			fwdCfg.CacheSize = &cacheSize
@@ -138,13 +145,16 @@ func policyDnsServiceFromSchema(d *schema.ResourceData) model.PolicyDnsService {
 				fwdCfg.UpstreamServers = append(fwdCfg.UpstreamServers, s.(string))
 			}
 		}
+		if mode, ok := fwdMap["shared_zone_forwarding_mode"].(string); ok && mode != "" {
+			fwdCfg.SharedZoneForwardingMode = &mode
+		}
 		obj.ForwarderConfig = fwdCfg
 	}
 
 	return obj
 }
 
-func policyDnsServiceToSchema(d *schema.ResourceData, obj model.PolicyDnsService) {
+func policyDnsServiceToSchema(d *schema.ResourceData, obj model.DnsService) {
 	setPolicyTagsInSchema(d, obj.Tags)
 	d.Set("display_name", obj.DisplayName)
 	d.Set("description", obj.Description)
@@ -160,6 +170,9 @@ func policyDnsServiceToSchema(d *schema.ResourceData, obj model.PolicyDnsService
 		}
 		if obj.ForwarderConfig.CacheSize != nil {
 			fwdMap["cache_size"] = int(*obj.ForwarderConfig.CacheSize)
+		}
+		if obj.ForwarderConfig.SharedZoneForwardingMode != nil {
+			fwdMap["shared_zone_forwarding_mode"] = *obj.ForwarderConfig.SharedZoneForwardingMode
 		}
 		d.Set("forwarder_config", []interface{}{fwdMap})
 	} else {
@@ -182,14 +195,14 @@ func resourceNsxtPolicyDnsServiceCreate(d *schema.ResourceData, m interface{}) e
 	parents := getVpcParentsFromContext(sessionContext)
 	obj := policyDnsServiceFromSchema(d)
 
-	log.Printf("[INFO] Creating PolicyDnsService with ID %s", id)
+	log.Printf("[INFO] Creating DnsService with ID %s", id)
 	c := cliPolicyDnsServicesClient(sessionContext, connector)
 	if c == nil {
 		return fmt.Errorf("unsupported client type for DNS service")
 	}
 	err = c.Patch(parents[0], parents[1], id, obj)
 	if err != nil {
-		return handleCreateError("PolicyDnsService", id, err)
+		return handleCreateError("DnsService", id, err)
 	}
 	d.SetId(id)
 	d.Set("nsx_id", id)
@@ -202,7 +215,7 @@ func resourceNsxtPolicyDnsServiceRead(d *schema.ResourceData, m interface{}) err
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining PolicyDnsService ID")
+		return fmt.Errorf("error obtaining DnsService ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -212,7 +225,7 @@ func resourceNsxtPolicyDnsServiceRead(d *schema.ResourceData, m interface{}) err
 	}
 	obj, err := c.Get(parents[0], parents[1], id)
 	if err != nil {
-		return handleReadError(d, "PolicyDnsService", id, err)
+		return handleReadError(d, "DnsService", id, err)
 	}
 	policyDnsServiceToSchema(d, obj)
 	return nil
@@ -224,7 +237,7 @@ func resourceNsxtPolicyDnsServiceUpdate(d *schema.ResourceData, m interface{}) e
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining PolicyDnsService ID")
+		return fmt.Errorf("error obtaining DnsService ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -239,7 +252,7 @@ func resourceNsxtPolicyDnsServiceUpdate(d *schema.ResourceData, m interface{}) e
 	_, err := c.Update(parents[0], parents[1], id, obj)
 	if err != nil {
 		d.Partial(true)
-		return handleUpdateError("PolicyDnsService", id, err)
+		return handleUpdateError("DnsService", id, err)
 	}
 	return resourceNsxtPolicyDnsServiceRead(d, m)
 }
@@ -250,7 +263,7 @@ func resourceNsxtPolicyDnsServiceDelete(d *schema.ResourceData, m interface{}) e
 
 	id := d.Id()
 	if id == "" {
-		return fmt.Errorf("error obtaining PolicyDnsService ID")
+		return fmt.Errorf("error obtaining DnsService ID")
 	}
 
 	parents := getVpcParentsFromContext(sessionContext)
@@ -260,7 +273,7 @@ func resourceNsxtPolicyDnsServiceDelete(d *schema.ResourceData, m interface{}) e
 	}
 	err := c.Delete(parents[0], parents[1], id)
 	if err != nil {
-		return handleDeleteError("PolicyDnsService", id, err)
+		return handleDeleteError("DnsService", id, err)
 	}
 	return nil
 }

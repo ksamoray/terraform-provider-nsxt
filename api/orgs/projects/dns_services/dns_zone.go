@@ -11,9 +11,9 @@ import (
 	utl "github.com/vmware/terraform-provider-nsxt/api/utl"
 )
 
-type ProjectDnsZoneClientContext utl.ClientContext
+type DnsZoneClientContext utl.ClientContext
 
-func NewZonesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *ProjectDnsZoneClientContext {
+func NewZonesClient(sessionContext utl.SessionContext, connector vapiProtocolClient_.Connector) *DnsZoneClientContext {
 	var client interface{}
 
 	switch sessionContext.ClientType {
@@ -24,10 +24,10 @@ func NewZonesClient(sessionContext utl.SessionContext, connector vapiProtocolCli
 	default:
 		return nil
 	}
-	return &ProjectDnsZoneClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
+	return &DnsZoneClientContext{Client: client, ClientType: sessionContext.ClientType, ProjectID: sessionContext.ProjectID}
 }
 
-func (c ProjectDnsZoneClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) error {
+func (c DnsZoneClientContext) Delete(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) error {
 	var err error
 
 	switch c.ClientType {
@@ -42,8 +42,8 @@ func (c ProjectDnsZoneClientContext) Delete(orgIdParam string, projectIdParam st
 	return err
 }
 
-func (c ProjectDnsZoneClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) (model0.ProjectDnsZone, error) {
-	var obj model0.ProjectDnsZone
+func (c DnsZoneClientContext) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) (model0.DnsZone, error) {
+	var obj model0.DnsZone
 	var err error
 
 	switch c.ClientType {
@@ -61,7 +61,7 @@ func (c ProjectDnsZoneClientContext) Get(orgIdParam string, projectIdParam strin
 	return obj, err
 }
 
-func (c ProjectDnsZoneClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model0.ProjectDnsZone) error {
+func (c DnsZoneClientContext) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model0.DnsZone) error {
 	var err error
 
 	switch c.ClientType {
@@ -76,9 +76,9 @@ func (c ProjectDnsZoneClientContext) Patch(orgIdParam string, projectIdParam str
 	return err
 }
 
-func (c ProjectDnsZoneClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model0.ProjectDnsZone) (model0.ProjectDnsZone, error) {
+func (c DnsZoneClientContext) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model0.DnsZone) (model0.DnsZone, error) {
 	var err error
-	var obj model0.ProjectDnsZone
+	var obj model0.DnsZone
 
 	switch c.ClientType {
 

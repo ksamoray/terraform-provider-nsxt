@@ -31,10 +31,10 @@ var (
 	dnsRuleParentPath  = "/orgs/default/projects/project1/dns-services/dns-svc-1"
 )
 
-func dnsRuleAPIResponse() nsxModel.ProjectDnsRule {
-	actionType := nsxModel.ProjectDnsRule_ACTION_TYPE_FORWARD
+func dnsRuleAPIResponse() nsxModel.DnsRule {
+	actionType := nsxModel.DnsRule_ACTION_TYPE_FORWARD
 	upstream := "8.8.8.8"
-	return nsxModel.ProjectDnsRule{
+	return nsxModel.DnsRule{
 		Id:              &dnsRuleID,
 		DisplayName:     &dnsRuleDisplayName,
 		Description:     &dnsRuleDescription,
@@ -59,17 +59,17 @@ func minimalDnsRuleData() map[string]interface{} {
 
 func setupDnsRuleMock(t *testing.T, ctrl *gomock.Controller) (*dnssvcsmocks.MockRulesClient, func()) {
 	mockSDK := dnssvcsmocks.NewMockRulesClient(ctrl)
-	mockWrapper := &dnssvcsapi.ProjectDnsRuleClientContext{
+	mockWrapper := &dnssvcsapi.DnsRuleClientContext{
 		Client:     mockSDK,
 		ClientType: utl.Multitenancy,
 		ProjectID:  "project1",
 	}
 
-	original := cliProjectDnsRulesClient
-	cliProjectDnsRulesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *dnssvcsapi.ProjectDnsRuleClientContext {
+	original := cliDnsRulesClient
+	cliDnsRulesClient = func(_ utl.SessionContext, _ vapiProtocolClient.Connector) *dnssvcsapi.DnsRuleClientContext {
 		return mockWrapper
 	}
-	return mockSDK, func() { cliProjectDnsRulesClient = original }
+	return mockSDK, func() { cliDnsRulesClient = original }
 }
 
 func TestMockResourceNsxtPolicyDnsRuleCreate(t *testing.T) {
@@ -84,7 +84,7 @@ func TestMockResourceNsxtPolicyDnsRuleCreate(t *testing.T) {
 
 		notFoundErr := vapiErrors.NotFound{}
 		gomock.InOrder(
-			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.ProjectDnsRule{}, notFoundErr),
+			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.DnsRule{}, notFoundErr),
 			mockSDK.EXPECT().Patch(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID, gomock.Any()).Return(nil),
 			mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(dnsRuleAPIResponse(), nil),
 		)
@@ -119,7 +119,7 @@ func TestMockResourceNsxtPolicyDnsRuleCreate(t *testing.T) {
 		defer restore()
 
 		notFoundErr := vapiErrors.NotFound{}
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.ProjectDnsRule{}, notFoundErr)
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.DnsRule{}, notFoundErr)
 
 		res := resourceNsxtPolicyDnsRule()
 		data := minimalDnsRuleData()
@@ -157,7 +157,7 @@ func TestMockResourceNsxtPolicyDnsRuleRead(t *testing.T) {
 		mockSDK, restore := setupDnsRuleMock(t, ctrl)
 		defer restore()
 
-		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.ProjectDnsRule{}, vapiErrors.NotFound{})
+		mockSDK.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any(), dnsRuleID).Return(nsxModel.DnsRule{}, vapiErrors.NotFound{})
 
 		res := resourceNsxtPolicyDnsRule()
 		d := schema.TestResourceDataRaw(t, res.Schema, minimalDnsRuleData())

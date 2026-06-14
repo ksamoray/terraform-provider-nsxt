@@ -49,10 +49,10 @@ func (mr *MockDnsServicesClientMockRecorder) Delete(orgIdParam, projectIdParam, 
 }
 
 // Get mocks base method.
-func (m *MockDnsServicesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string) (model.PolicyDnsService, error) {
+func (m *MockDnsServicesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string) (model.DnsService, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", orgIdParam, projectIdParam, dnsServiceIdParam)
-	ret0, _ := ret[0].(model.PolicyDnsService)
+	ret0, _ := ret[0].(model.DnsService)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockDnsServicesClientMockRecorder) Get(orgIdParam, projectIdParam, dns
 }
 
 // List mocks base method.
-func (m *MockDnsServicesClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.PolicyDnsServiceListResult, error) {
+func (m *MockDnsServicesClient) List(orgIdParam string, projectIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.DnsServiceListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", orgIdParam, projectIdParam, cursorParam, includeMarkForDeleteObjectsParam, includedFieldsParam, pageSizeParam, sortAscendingParam, sortByParam)
-	ret0, _ := ret[0].(model.PolicyDnsServiceListResult)
+	ret0, _ := ret[0].(model.DnsServiceListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockDnsServicesClientMockRecorder) List(orgIdParam, projectIdParam, cu
 }
 
 // Patch mocks base method.
-func (m *MockDnsServicesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model.PolicyDnsService) error {
+func (m *MockDnsServicesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model.DnsService) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", orgIdParam, projectIdParam, dnsServiceIdParam, policyDnsServiceParam)
 	ret0, _ := ret[0].(error)
@@ -93,10 +93,10 @@ func (mr *MockDnsServicesClientMockRecorder) Patch(orgIdParam, projectIdParam, d
 }
 
 // Update mocks base method.
-func (m *MockDnsServicesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model.PolicyDnsService) (model.PolicyDnsService, error) {
+func (m *MockDnsServicesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, policyDnsServiceParam model.DnsService) (model.DnsService, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", orgIdParam, projectIdParam, dnsServiceIdParam, policyDnsServiceParam)
-	ret0, _ := ret[0].(model.PolicyDnsService)
+	ret0, _ := ret[0].(model.DnsService)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

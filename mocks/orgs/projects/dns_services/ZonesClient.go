@@ -49,10 +49,10 @@ func (mr *MockZonesClientMockRecorder) Delete(orgIdParam, projectIdParam, dnsSer
 }
 
 // Get mocks base method.
-func (m *MockZonesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) (model.ProjectDnsZone, error) {
+func (m *MockZonesClient) Get(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string) (model.DnsZone, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", orgIdParam, projectIdParam, dnsServiceIdParam, zoneIdParam)
-	ret0, _ := ret[0].(model.ProjectDnsZone)
+	ret0, _ := ret[0].(model.DnsZone)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockZonesClientMockRecorder) Get(orgIdParam, projectIdParam, dnsServic
 }
 
 // List mocks base method.
-func (m *MockZonesClient) List(orgIdParam string, projectIdParam string, dnsServiceIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.ProjectDnsZoneListResult, error) {
+func (m *MockZonesClient) List(orgIdParam string, projectIdParam string, dnsServiceIdParam string, cursorParam *string, includeMarkForDeleteObjectsParam *bool, includedFieldsParam *string, pageSizeParam *int64, sortAscendingParam *bool, sortByParam *string) (model.DnsZoneListResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", orgIdParam, projectIdParam, dnsServiceIdParam, cursorParam, includeMarkForDeleteObjectsParam, includedFieldsParam, pageSizeParam, sortAscendingParam, sortByParam)
-	ret0, _ := ret[0].(model.ProjectDnsZoneListResult)
+	ret0, _ := ret[0].(model.DnsZoneListResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockZonesClientMockRecorder) List(orgIdParam, projectIdParam, dnsServi
 }
 
 // Patch mocks base method.
-func (m *MockZonesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model.ProjectDnsZone) error {
+func (m *MockZonesClient) Patch(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model.DnsZone) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Patch", orgIdParam, projectIdParam, dnsServiceIdParam, zoneIdParam, projectDnsZoneParam)
 	ret0, _ := ret[0].(error)
@@ -93,10 +93,10 @@ func (mr *MockZonesClientMockRecorder) Patch(orgIdParam, projectIdParam, dnsServ
 }
 
 // Update mocks base method.
-func (m *MockZonesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model.ProjectDnsZone) (model.ProjectDnsZone, error) {
+func (m *MockZonesClient) Update(orgIdParam string, projectIdParam string, dnsServiceIdParam string, zoneIdParam string, projectDnsZoneParam model.DnsZone) (model.DnsZone, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", orgIdParam, projectIdParam, dnsServiceIdParam, zoneIdParam, projectDnsZoneParam)
-	ret0, _ := ret[0].(model.ProjectDnsZone)
+	ret0, _ := ret[0].(model.DnsZone)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
